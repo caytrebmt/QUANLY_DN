@@ -4,9 +4,23 @@
 
 ## 🚀 1. TỔNG QUAN HỆ THỐNG & TÍNH NĂNG DEPLOY
 
-Dự án **ERP-VIỆT SaaS Enterprise & WebShop E-Commerce** được thiết kế nguyên khối full-stack hiện đại:
+Dự án **ERP-VIỆT SaaS Enterprise & WebShop E-Commerce** được thiết kế nguyên khối full-stack :
+* Dự án ERPACC & Webshop được xây dựng theo kiến trúc Full-stack TypeScript:
+1. Frontend (Giao diện người dùng)
+Framework: React 18 (kết hợp với TypeScript)
+Build Tool & Dev Server: Vite (cho tốc độ khởi động và biên dịch cực nhanh)
+CSS Framework: Tailwind CSS v4 (thiết kế giao diện responsive và tùy chỉnh linh hoạt)
+Routing: React Router DOM v6 (quản lý điều hướng đa trang cho cả WebShop & SaaS Admin)
+Animation & Icons: Motion (motion/react) & Lucide React
+2. Backend (Máy chủ & API)
+Runtime / Framework: Node.js + Express.js (viết hoàn toàn bằng TypeScript)
+API Proxy & Dev Integration: Tích hợp Vite Express Middleware hỗ trợ phát triển và đóng gói bundle đơn bằng esbuild cho môi trường Cloud Run / Production.
+3. Database (Cơ sở dữ liệu)
+Database engine: PostgreSQL (với kết nối qua thư viện pg)
+Chức năng dữ liệu: Quản lý kho, đơn hàng WebShop, chứng từ kế toán , quản trị người dùng & ma trận phân quyền RBAC.
+
 * **Cửa hàng trực tuyến WebShop (`/`):** Xem sản phẩm, giỏ hàng, đặt hàng trực tuyến, tra cứu đơn hàng.
-* **Hệ thống Quản trị ERP SaaS (`/saas`):** Đăng nhập phân quyền nhân viên (`/saas/login`), Dashboard, Quản lý đơn hàng, Kho bãi, Báo giá, Công nợ, Thuế GTGT VAT, Kế toán TT200 và Báo cáo tài chính.
+* **Hệ thống Quản trị ERP (`/saas`):** Đăng nhập phân quyền nhân viên (`/saas/login`), Dashboard, Quản lý đơn hàng, Kho bãi, Báo giá, Công nợ, Thuế GTGT VAT, Kế toán và Báo cáo tài chính.
 * **Tự động thích ứng trên Netlify:** Chạy song song cả Giao diện Frontend Single Page App (SPA) và Backend API Node.js/Express serverless trên Netlify Functions.
 
 ---
