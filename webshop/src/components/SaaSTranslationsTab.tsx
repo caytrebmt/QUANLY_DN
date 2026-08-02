@@ -51,17 +51,38 @@ export const SaaSTranslationsTab: React.FC = () => {
   const [newVi, setNewVi] = useState('');
   const [newEn, setNewEn] = useState('');
 
-  // Categories list
-  const categories = [
-    { id: 'all', label: language === 'en' ? 'All Categories' : 'Tất cả danh mục' },
-    { id: 'common', label: language === 'en' ? 'Common & Buttons' : 'Chung & Nút bấm' },
-    { id: 'menu', label: language === 'en' ? 'Sidebar & Menus' : 'Menu & Điều hướng' },
-    { id: 'dashboard', label: language === 'en' ? 'Dashboard & Metrics' : 'Tổng quan & Thống kê' },
-    { id: 'products', label: language === 'en' ? 'Products & Items' : 'Sản phẩm & Hàng hóa' },
-    { id: 'inventory', label: language === 'en' ? 'Warehouse & Stock' : 'Kho & Xuất nhập' },
-    { id: 'finance', label: language === 'en' ? 'Finance & Invoices' : 'Tài chính & Hóa đơn' },
-    { id: 'accounting', label: language === 'en' ? 'Accounting TT200' : 'Sổ Kế toán TT200' },
-  ];
+  // Dynamic Categories list computed from translationsList
+  const dynamicCategories = useMemo(() => {
+    const knownLabels: Record<string, { vi: string; en: string }> = {
+      common: { vi: 'Chung & Nút bấm', en: 'Common & Buttons' },
+      menu: { vi: 'Menu & Điều hướng', en: 'Sidebar & Menus' },
+      dashboard: { vi: 'Tổng quan & Thống kê', en: 'Dashboard & Metrics' },
+      products: { vi: 'Sản phẩm & Hàng hóa', en: 'Products & Items' },
+      categories: { vi: 'Danh mục WebShop', en: 'Store Categories' },
+      footer: { vi: 'Chân trang WebShop', en: 'WebShop Footer' },
+      inventory: { vi: 'Kho & Xuất nhập', en: 'Warehouse & Stock' },
+      finance: { vi: 'Tài chính & Hóa đơn', en: 'Finance & Invoices' },
+      accounting: { vi: 'Sổ Kế toán TT200', en: 'Accounting TT200' },
+      saas: { vi: 'Cấu hình System SaaS', en: 'SaaS System Config' },
+    };
+
+    const uniqueCats = Array.from(new Set(translationsList.map((i) => i.category || 'common')));
+    
+    // Ensure all known categories exist in list even if 0 items initially
+    Object.keys(knownLabels).forEach((k) => {
+      if (!uniqueCats.includes(k)) uniqueCats.push(k);
+    });
+
+    return [
+      { id: 'all', label: language === 'en' ? 'All Categories' : 'Tất cả danh mục', count: translationsList.length },
+      ...uniqueCats.map((catId) => {
+        const count = translationsList.filter((i) => (i.category || 'common') === catId).length;
+        const labelObj = knownLabels[catId];
+        const labelText = labelObj ? (language === 'en' ? labelObj.en : labelObj.vi) : catId;
+        return { id: catId, label: labelText, count };
+      }),
+    ];
+  }, [translationsList, language]);
 
   // Filtered list
   const filteredTranslations = useMemo(() => {
@@ -267,17 +288,22 @@ export const SaaSTranslationsTab: React.FC = () => {
         {/* Category Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-2 border-t border-zinc-100 dark:border-zinc-800">
           <Filter className="w-3.5 h-3.5 text-zinc-400 mr-1 flex-shrink-0" />
-          {categories.map((cat) => (
+          {dynamicCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
                 selectedCategory === cat.id
-                  ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                  ? 'bg-blue-600 text-white shadow-xs font-semibold'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
-              {cat.label}
+              <span>{cat.label}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                selectedCategory === cat.id ? 'bg-white/20 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+              }`}>
+                {cat.count}
+              </span>
             </button>
           ))}
         </div>
@@ -329,7 +355,17 @@ export const SaaSTranslationsTab: React.FC = () => {
                             {item.key}
                           </span>
                           <div className="flex items-center gap-1 text-[10px] text-zinc-400">
-                            <span className="uppercase font-semibold text-zinc-500 dark:text-zinc-400">{item.category}</span>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editCategory}
+                                onChange={(e) => setEditCategory(e.target.value.toLowerCase().trim())}
+                                placeholder="category"
+                                className="px-1.5 py-0.5 rounded border border-blue-400 dark:border-blue-600 bg-white dark:bg-zinc-800 text-[10px] font-mono font-bold text-zinc-900 dark:text-zinc-100"
+                              />
+                            ) : (
+                              <span className="uppercase font-semibold text-zinc-500 dark:text-zinc-400">{item.category}</span>
+                            )}
                             {item.isCustom && (
                               <span className="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-sans">
                                 Custom
@@ -495,19 +531,26 @@ export const SaaSTranslationsTab: React.FC = () => {
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                   Danh mục phân loại (Category)
                 </label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="common">common (Chung & Nút bấm)</option>
-                  <option value="menu">menu (Thanh điều hướng)</option>
-                  <option value="dashboard">dashboard (Tổng quan)</option>
-                  <option value="products">products (Hàng hóa)</option>
-                  <option value="inventory">inventory (Kho bãi)</option>
-                  <option value="finance">finance (Tài chính)</option>
-                  <option value="accounting">accounting (Kế toán)</option>
-                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  >
+                    {dynamicCategories.filter(c => c.id !== 'all').map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.id} ({c.label})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Hoặc nhập danh mục mới..."
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value.toLowerCase().trim())}
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                  />
+                </div>
               </div>
 
               <div>

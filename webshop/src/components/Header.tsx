@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ShoppingCart, Search, Sun, Moon, LayoutDashboard, User, Package, LogOut, LogIn, UserPlus, ChevronDown, ShieldCheck, Globe } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
@@ -13,7 +13,6 @@ const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   const [searchInput, setSearchInput] = useState("");
@@ -67,7 +66,7 @@ const Header: React.FC = () => {
         <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center flex-1 max-w-md relative">
           <input
             type="text"
-            placeholder="Tìm tên sản phẩm, mã SKU..."
+            placeholder={t("search_product_placeholder", "Tìm tên sản phẩm, mã SKU...")}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-full pl-4 pr-10 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white dark:focus:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all"
@@ -83,7 +82,7 @@ const Header: React.FC = () => {
           <button
             onClick={toggleTheme}
             className="p-2 text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-100 rounded-full transition-colors cursor-pointer"
-            title={theme === "dark" ? "Chuyển sang Giao diện Sáng" : "Chuyển sang Giao diện Tối"}
+            title={theme === "dark" ? t("switch_light_mode", "Chuyển sang Giao diện Sáng") : t("switch_dark_mode", "Chuyển sang Giao diện Tối")}
           >
             {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
           </button>
@@ -131,7 +130,7 @@ const Header: React.FC = () => {
                       {user.name}
                     </p>
                     <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold leading-tight">
-                      {user.customer_id ? `Mã KH: KH-#${user.customer_id}` : "Khách hàng WebShop"}
+                      {user.customer_id ? `${t("customer_code", "Mã KH")}: KH-#${user.customer_id}` : t("webshop_customer", "Khách hàng WebShop")}
                     </p>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showUserDropdown ? "rotate-180" : ""}`} />
@@ -153,7 +152,7 @@ const Header: React.FC = () => {
                             {user.email || user.phone}
                           </p>
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                            <ShieldCheck className="w-3 h-3" /> Tài khoản đã xác thực
+                            <ShieldCheck className="w-3 h-3" /> {t("verified_account", "Tài khoản đã xác thực")}
                           </span>
                         </div>
                       </div>
@@ -166,7 +165,7 @@ const Header: React.FC = () => {
                         className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
                       >
                         <LayoutDashboard className="w-4 h-4 text-amber-500" />
-                        <span>Trang Quản Trị ERP SaaS</span>
+                        <span>{t("erp_saas_admin", "Trang Quản Trị ERP SaaS")}</span>
                       </Link>
 
                       <Link
@@ -175,7 +174,7 @@ const Header: React.FC = () => {
                         className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
                         <Package className="w-4 h-4 text-indigo-500" />
-                        <span>Đơn hàng của tôi</span>
+                        <span>{t("nav_my_orders", "Đơn hàng của tôi")}</span>
                       </Link>
 
                       <Link
@@ -184,7 +183,7 @@ const Header: React.FC = () => {
                         className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
                         <User className="w-4 h-4 text-amber-500" />
-                        <span>Hồ sơ cá nhân & Mật khẩu</span>
+                        <span>{t("profile_password", "Hồ sơ cá nhân & Mật khẩu")}</span>
                       </Link>
                     </div>
 
@@ -197,7 +196,7 @@ const Header: React.FC = () => {
                         className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>Đăng xuất</span>
+                        <span>{t("nav_logout", "Đăng xuất")}</span>
                       </button>
                     </div>
                   </div>
@@ -210,14 +209,14 @@ const Header: React.FC = () => {
                   className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   <LogIn className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>Đăng nhập</span>
+                  <span>{t("nav_login", "Đăng nhập")}</span>
                 </Link>
                 <Link
                   to="/register"
                   className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  <span>Đăng ký</span>
+                  <span>{t("nav_register", "Đăng ký")}</span>
                 </Link>
               </div>
             )}
@@ -230,7 +229,7 @@ const Header: React.FC = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Tìm kiếm sản phẩm..."
+            placeholder={t("search_product_placeholder", "Tìm kiếm sản phẩm...")}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg pl-4 pr-10 py-2 text-sm focus:outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"

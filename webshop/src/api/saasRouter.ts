@@ -470,3 +470,73 @@ saasRouter.get('/orders', async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
+
+// ==========================================
+// 7. SYSTEM TRANSLATION MANAGEMENT
+// ==========================================
+saasRouter.get('/translations/all', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ ok: true, data: [] });
+  }
+  try {
+    const result = await query(
+      `SELECT t1.translation_key as key, 
+              COALESCE(t1.category, 'common') as category,
+              t1.translation_value as vi,
+              COALESCE(t2.translation_value, '') as en
+       FROM sys_translations t1
+       LEFT JOIN sys_translations t2 ON t1.translation_key = t2.translation_key AND t2.lang_code = 'en'
+       WHERE t1.lang_code = 'vi'
+       ORDER BY t1.translation_key ASC`
+    );
+    res.json({ ok: true, data: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.post('/translations', async (req, res) => {
+  const { key, category = 'common', vi, en } = req.body;
+  if (!key) {
+    return res.status(400).json({ ok: false, message: 'Missing translation key code' });
+  }
+
+  if (isDbConnected()) {
+    try {
+      if (vi !== undefined) {
+        await query(
+          `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
+           VALUES ('vi', $1, $2, $3)
+           ON CONFLICT (lang_code, translation_key) 
+           DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
+          [category, key, vi]
+        );
+      }
+      if (en !== undefined) {
+        await query(
+          `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
+           VALUES ('en', $1, $2, $3)
+           ON CONFLICT (lang_code, translation_key) 
+           DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
+          [category, key, en]
+        );
+      }
+    } catch (error: any) {
+      console.error('[Translation DB Save Error]', error);
+    }
+  }
+
+  res.json({ ok: true, message: 'Saved translation key successfully' });
+});
+
+saasRouter.delete('/translations/:key', async (req, res) => {
+  const { key } = req.params;
+  if (isDbConnected() && key) {
+    try {
+      await query(`DELETE FROM sys_translations WHERE translation_key = $1`, [key]);
+    } catch (error: any) {
+      console.error('[Translation DB Delete Error]', error);
+    }
+  }
+  res.json({ ok: true, message: 'Deleted translation key successfully' });
+});

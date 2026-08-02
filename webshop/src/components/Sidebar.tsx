@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
+import { useLanguage } from "../contexts/LanguageContext";
 import client from "../api/client";
 import { Category } from "../types";
 
@@ -35,6 +36,7 @@ const SidebarBody: React.FC<{
 }> = ({ collapsed, onNavigate, categories }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const { cart } = useCart();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [accountOpen, setAccountOpen] = useState(
@@ -47,9 +49,9 @@ const SidebarBody: React.FC<{
       : location.pathname === item.to;
 
   const storeItems: NavItem[] = [
-    { label: "Trang chủ", to: "/", icon: Home, match: (p) => p === "/" },
+    { label: t("nav_home", "Trang chủ"), to: "/", icon: Home, match: (p) => p === "/" },
     {
-      label: "Giỏ hàng",
+      label: t("nav_cart", "Giỏ hàng"),
       to: "/cart",
       icon: ShoppingCart,
       badge: cart?.item_count || 0,
@@ -57,8 +59,8 @@ const SidebarBody: React.FC<{
   ];
 
   const accountItems: NavItem[] = [
-    { label: "Đơn hàng", to: "/orders", icon: Package },
-    { label: "Hồ sơ cá nhân", to: "/account", icon: User },
+    { label: t("nav_my_orders", "Đơn hàng"), to: "/orders", icon: Package },
+    { label: t("nav_my_profile", "Hồ sơ cá nhân"), to: "/account", icon: User },
   ];
 
   const selectCategory = (id: number | null) => {
@@ -104,12 +106,12 @@ const SidebarBody: React.FC<{
     <div className={`mb-1 ${mt}`}>
       {!collapsed && (
         <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-600">
-          {/*title*/}
+          {title}
         </div>
       )}
       <div className="flex flex-col gap-1">
         {items.map(renderItem)}
-        {title === "Cửa hàng" &&
+        {title === t("store_title", "Cửa hàng") &&
           collapsed &&
           items.map((it) => (
             <span key={`t-${it.to}`} className="sr-only">
@@ -123,20 +125,20 @@ const SidebarBody: React.FC<{
   return (
     <div className="flex flex-col h-full">
       <nav className="flex-1 px-2 py-4 overflow-y-auto">
-        {renderGroup("Cửa hàng", storeItems)}
+        {renderGroup(t("store_title", "Cửa hàng"), storeItems)}
 
         {/* Danh mục sản phẩm */}
         <div className={`mb-1 ${collapsed ? "mt-1" : "mt-4"}`}>
           {!collapsed && (
             <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-600 flex items-center gap-1.5">
               <LayoutGrid className="w-3.5 h-3.5" />
-              Danh mục
+              {t("nav_categories", "Danh mục")}
             </div>
           )}
           <div className="flex flex-col gap-1">
             <button
               onClick={() => selectCategory(null)}
-              title={collapsed ? "Tất cả sản phẩm" : undefined}
+              title={collapsed ? t("nav_all_products", "Tất cả sản phẩm") : undefined}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer ${
                 !activeCategory
                   ? "bg-indigo-600 text-white shadow-xs font-semibold"
@@ -144,15 +146,16 @@ const SidebarBody: React.FC<{
               }`}
             >
               <LayoutGrid className="w-5 h-5 shrink-0" />
-              {!collapsed && <span className="truncate">Tất cả sản phẩm</span>}
+              {!collapsed && <span className="truncate">{t("nav_all_products", "Tất cả sản phẩm")}</span>}
             </button>
             {categories.map((cat) => {
               const active = String(cat.id) === activeCategory;
+              const catDisplayName = t(cat.name, cat.name);
               return (
                 <button
                   key={cat.id}
                   onClick={() => selectCategory(cat.id)}
-                  title={collapsed ? cat.name : undefined}
+                  title={collapsed ? catDisplayName : undefined}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer ${
                     active
                       ? "bg-indigo-600 text-white shadow-xs font-semibold"
@@ -160,7 +163,7 @@ const SidebarBody: React.FC<{
                   }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60 shrink-0" />
-                  {!collapsed && <span className="truncate">{cat.name}</span>}
+                  {!collapsed && <span className="truncate">{catDisplayName}</span>}
                 </button>
               );
             })}
@@ -175,7 +178,7 @@ const SidebarBody: React.FC<{
                 onClick={() => setAccountOpen(!accountOpen)}
                 className="w-full flex items-center justify-between px-3 py-1 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
               >
-                Tài khoản
+                {t("nav_account", "Tài khoản")}
                 <ChevronRight
                   className={`w-4 h-4 transition-transform ${accountOpen ? "rotate-90" : ""}`}
                 />
@@ -211,7 +214,7 @@ const SidebarBody: React.FC<{
                     logout();
                     onNavigate?.();
                   }}
-                  title="Đăng xuất"
+                  title={t("nav_logout", "Đăng xuất")}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 cursor-pointer"
                 >
                   <LogOut className="w-5 h-5 shrink-0" />
@@ -227,7 +230,7 @@ const SidebarBody: React.FC<{
                 className="mt-2 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 transition-all cursor-pointer"
               >
                 <LogOut className="w-5 h-5 shrink-0" />
-                Đăng xuất
+                {t("nav_logout", "Đăng xuất")}
               </button>
             )}
           </div>
@@ -235,31 +238,31 @@ const SidebarBody: React.FC<{
           <div className={collapsed ? "mt-1" : "mt-4"}>
             {!collapsed && (
               <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-600">
-                Tài khoản
+                {t("nav_account", "Tài khoản")}
               </div>
             )}
             <div className="flex flex-col gap-1">
               <Link
                 to="/login"
                 onClick={onNavigate}
-                title={collapsed ? "Đăng nhập" : undefined}
+                title={collapsed ? t("nav_login", "Đăng nhập") : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer ${
                   collapsed ? "justify-center" : ""
                 }`}
               >
                 <LogIn className="w-5 h-5 shrink-0" />
-                {!collapsed && "Đăng nhập"}
+                {!collapsed && t("nav_login", "Đăng nhập")}
               </Link>
               <Link
                 to="/register"
                 onClick={onNavigate}
-                title={collapsed ? "Đăng ký" : undefined}
+                title={collapsed ? t("nav_register", "Đăng ký") : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs transition-all cursor-pointer ${
                   collapsed ? "justify-center" : ""
                 }`}
               >
                 <UserPlus className="w-5 h-5 shrink-0" />
-                {!collapsed && "Đăng ký"}
+                {!collapsed && t("nav_register", "Đăng ký")}
               </Link>
             </div>
           </div>

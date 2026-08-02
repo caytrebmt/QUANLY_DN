@@ -5,11 +5,23 @@ import path from 'path';
 const { Pool } = pg;
 
 // PostgreSQL Connection Pool configuration
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const connectionString =
+  process.env.SUPABASE_DATABASE_URL ||
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL;
+
+const isSupabase = connectionString ? (connectionString.includes('supabase.co') || connectionString.includes('supabase.com')) : false;
+const useSsl = isSupabase || process.env.NODE_ENV === 'production' || (connectionString ? connectionString.includes('sslmode=require') : false);
 
 export const pool = new Pool(
   connectionString
-    ? { connectionString, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false }
+    ? {
+        connectionString,
+        ssl: useSsl ? { rejectUnauthorized: false } : false,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
+      }
     : {
         host: process.env.PGHOST || 'localhost',
         port: Number(process.env.PGPORT || 5432),

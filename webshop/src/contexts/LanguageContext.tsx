@@ -23,6 +23,53 @@ interface LanguageContextType {
 }
 
 export const initialTranslationItems: TranslationItem[] = [
+  // WEBSHOP STOREFRONT
+  { key: 'nav_home', category: 'menu', vi: 'Trang chủ', en: 'Home' },
+  { key: 'nav_cart', category: 'menu', vi: 'Giỏ hàng', en: 'Cart' },
+  { key: 'nav_categories', category: 'menu', vi: 'Danh mục', en: 'Categories' },
+  { key: 'nav_all_products', category: 'menu', vi: 'Tất cả sản phẩm', en: 'All Products' },
+  { key: 'nav_account', category: 'menu', vi: 'Tài khoản', en: 'Account' },
+  { key: 'nav_my_orders', category: 'menu', vi: 'Đơn hàng của tôi', en: 'My Orders' },
+  { key: 'nav_my_profile', category: 'menu', vi: 'Hồ sơ cá nhân', en: 'My Profile' },
+  { key: 'nav_login', category: 'menu', vi: 'Đăng nhập', en: 'Login' },
+  { key: 'nav_register', category: 'menu', vi: 'Đăng ký', en: 'Register' },
+  { key: 'nav_logout', category: 'menu', vi: 'Đăng xuất', en: 'Logout' },
+  { key: 'search_product_placeholder', category: 'common', vi: 'Tìm tên sản phẩm, mã SKU...', en: 'Search products, SKU...' },
+  { key: 'store_title', category: 'menu', vi: 'Cửa hàng', en: 'Store' },
+  { key: 'erp_saas_admin', category: 'menu', vi: 'Trang Quản Trị ERP SaaS', en: 'ERP SaaS Admin Dashboard' },
+  { key: 'verified_account', category: 'common', vi: 'Tài khoản đã xác thực', en: 'Verified Account' },
+  { key: 'customer_code', category: 'common', vi: 'Mã KH', en: 'Customer ID' },
+  { key: 'webshop_customer', category: 'common', vi: 'Khách hàng WebShop', en: 'WebShop Customer' },
+  { key: 'profile_password', category: 'menu', vi: 'Hồ sơ cá nhân & Mật khẩu', en: 'Profile & Password' },
+  { key: 'switch_light_mode', category: 'common', vi: 'Chuyển sang Giao diện Sáng', en: 'Switch to Light Mode' },
+  { key: 'switch_dark_mode', category: 'common', vi: 'Chuyển sang Giao diện Tối', en: 'Switch to Dark Mode' },
+
+  // WEBSHOP CATEGORIES
+  { key: 'Điện tử', category: 'categories', vi: 'Điện tử', en: 'Electronics' },
+  { key: 'Laptop', category: 'categories', vi: 'Laptop', en: 'Laptops' },
+  { key: 'Văn phòng phẩm', category: 'categories', vi: 'Văn phòng phẩm', en: 'Office Supplies' },
+  { key: 'Thực phẩm', category: 'categories', vi: 'Thực phẩm', en: 'Groceries & Food' },
+  { key: 'Ô tô - Xe máy', category: 'categories', vi: 'Ô tô - Xe máy', en: 'Automotive & Motorbikes' },
+  { key: 'Thời trang', category: 'categories', vi: 'Thời trang', en: 'Fashion' },
+  { key: 'Gia dụng', category: 'categories', vi: 'Gia dụng', en: 'Home Appliances' },
+
+  // FOOTER
+  { key: 'footer_fast_delivery', category: 'footer', vi: 'GIAO HÀNG', en: 'FAST DELIVERY' },
+  { key: 'footer_delivery_desc', category: 'footer', vi: 'Giao hàng nhanh chóng trong nội thành', en: 'Fast & reliable urban delivery' },
+  { key: 'footer_quality_assured', category: 'footer', vi: 'CHẤT LƯỢNG ĐẢM BẢO', en: 'QUALITY ASSURED' },
+  { key: 'footer_quality_desc', category: 'footer', vi: 'Sản phẩm chính hãng', en: '100% genuine guaranteed products' },
+  { key: 'footer_vat_invoices', category: 'footer', vi: 'HOÁ ĐƠN ĐẦY ĐỦ', en: 'VAT INVOICES' },
+  { key: 'footer_vat_desc', category: 'footer', vi: 'Hỗ trợ xuất hóa đơn VAT cho mọi đơn hàng', en: 'Supports official VAT e-invoicing for all orders' },
+  { key: 'footer_webshop_desc', category: 'footer', vi: 'Hệ thống webshop mang lại trải nghiệm mua sắm nhanh chóng, chính xác.', en: 'Modern e-commerce platform integrated directly with enterprise ERPACC SaaS.' },
+  { key: 'footer_contact_us', category: 'footer', vi: 'LIÊN HỆ VỚI CHÚNG TÔI', en: 'CONTACT US' },
+  { key: 'footer_address', category: 'footer', vi: 'Đường Số 0102, Quận 1, TP. Hồ Chí Minh', en: 'District 1, Ho Chi Minh City, Vietnam' },
+  { key: 'footer_support_policies', category: 'footer', vi: 'CHÍNH SÁCH HỖ TRỢ', en: 'SUPPORT POLICIES' },
+  { key: 'footer_shopping_guide', category: 'footer', vi: 'Hướng dẫn mua hàng', en: 'Shopping Guide' },
+  { key: 'footer_shipping_policy', category: 'footer', vi: 'Chính sách vận chuyển & giao nhận', en: 'Shipping & Delivery Policy' },
+  { key: 'footer_payment_methods', category: 'footer', vi: 'Phương thức thanh toán bảo mật', en: 'Secure Payment Methods' },
+  { key: 'footer_privacy_policy', category: 'footer', vi: 'Chính sách bảo mật thông tin khách hàng', en: 'Privacy Policy' },
+  { key: 'footer_copyright', category: 'footer', vi: '© 2026 WebShop. Tất cả quyền được bảo lưu.', en: '© 2026 WebShop. All rights reserved.' },
+  
   // COMMON
   { key: 'app_title', category: 'common', vi: 'Hệ Thống ERPACC & Webshop', en: 'ERPACC & Webshop System' },
   { key: 'search_placeholder', category: 'common', vi: 'Tìm kiếm dữ liệu...', en: 'Search data...' },
