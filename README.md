@@ -1,105 +1,170 @@
-# 📘 THÔNG TIN CHI TIẾT DỰ ÁN & HƯỚNG DẪN KẾT NỐI DỮ LIỆU (ONLINE & LOCALHOST)
+# 🏢 ERPmini - Hệ thống ERP quản lý kho
 
----
+## Tính năng chính
+- ✅ Quản lý **hàng hóa** (CRUD, import/export Excel)
+- ✅ Quản lý **nhà cung cấp** & **khách hàng** (import/export Excel)
+- ✅ **Phiếu nhập kho** với VAT đầu vào (in PDF)
+- ✅ **Phiếu xuất kho** với VAT đầu ra (in PDF)
+- ✅ **Tồn kho real-time** (giá vốn bình quân gia quyền)
+- ✅ **Lịch sử biến động** tồn kho
+- ✅ **Công nợ** phải thu / phải trả + thanh toán
+- ✅ **Sổ VAT** đầu vào / đầu ra (bảng kê theo tháng)
+- ✅ **Kế toán**: nhật ký chung, hệ thống tài khoản, cân đối số phát sinh
+- ✅ **Menu & Thông báo** định nghĩa bằng bảng DB (dễ mở rộng)
+- ✅ Export **Excel** & **PDF** (pandas, reportlab)
+- ✅ Import Excel cho hàng hóa, KH, NCC
 
-## 🚀 1. TỔNG QUAN DỰ ÁN (PROJECT OVERVIEW)
+## Cài đặt trên Windows + VSCode
 
-**Tên dự án:** ERP ACC & WebShop E-Commerce System  
-**Phiên bản:** v4.2 SaaS Cloud Enterprise Edition  
-**Mục tiêu:** Hệ thống quản trị tổng thể doanh nghiệp (SaaS ERP) kết hợp Cửa hàng trực tuyến (E-Commerce WebShop), hỗ trợ đa ngôn ngữ (Tiếng Việt & Tiếng Anh), đồng bộ kho bãi, đơn hàng, danh mục sản phẩm, hóa đơn VAT và sổ cái kế toán realtime.
+### 1. Yêu cầu hệ thống
+- Python 3.10+
+- PostgreSQL 14+
+- VSCode
 
----
-
-## 🛠️ 2. KIẾN TRÚC & CÔNG NGHỆ (TECH STACK)
-
-* **Frontend:** React 19 + TypeScript + Vite 6 + Tailwind CSS v4 + Lucide Icons + Motion
-* **Backend:** Node.js Express + TSX (Dev Server) / ESBuild (Production CJS Bundle)
-* **Database Driver:** `pg` (PostgreSQL Connection Pool) hỗ trợ Auto-Migration từ `schema.sql`
-* **Xác thực & Bảo mật:** JWT Authentication (Bearer Token), phân quyền Admin / User
-* **Đa ngôn ngữ:** `LanguageContext` (Chuyển đổi VI 🇻🇳 / EN 🇺🇸 realtime)
-* **Dữ liệu Đa ngữ cảnh:** Các bảng lưu trữ cấu trúc song ngữ: `name_vi`, `name_en`, `description_vi`, `description_en`
-
----
-
-## 🌐 3. MÔI TRƯỜNG KẾT NỐI DỮ LIỆU (ONLINE & LOCALHOST)
-
-Dự án hỗ trợ chuyển đổi linh hoạt giữa môi trường **Localhost** (chạy test máy cục bộ) và môi trường **Online** (khi đưa lên máy chủ Cloud / Production).
-
-### 3.1 Cấu hình Môi trường Localhost (Chạy thử & Kiểm thử)
-
-Để chạy thử trên máy tính của bạn (Localhost) trước khi deploy online:
-
-1. **Chuẩn bị PostgreSQL tại Localhost:**
-   * Cài đặt PostgreSQL (version 14+) hoặc dùng Docker:
-     ```bash
-     docker run --name erpacc-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=erpacc_db -p 5432:5432 -d postgres:15
-     ```
-
-2. **Cấu hình File `.env` tại Localhost:**
-   Tạo file `.env` (hoặc sao chép từ `.env.example`) tại thư mục `/webshop`:
-   ```env
-   # Cách 1: Sử dụng URL đơn (Khuyên dùng)
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/erpacc_db
-
-   # Cách 2: Hoặc khai báo từng thông số riêng lẻ
-   PGHOST=localhost
-   PGPORT=5432
-   PGUSER=postgres
-   PGPASSWORD=postgres
-   PGDATABASE=erpacc_db
-
-   NODE_ENV=development
-   PORT=3000
-   VITE_API_BASE_URL=/api
-   ```
-
----
-
-### 3.2 Cấu hình Môi trường Online (Production / Staging)
-
-Khi triển khai lên máy chủ thật (Cloud SQL, Supabase, Neon DB, Render PostgreSQL, VPS):
-
-1. **Khởi tạo chuỗi DATABASE_URL Online:**
-   Ví dụ kết nối tới Cloud DB với SSL mã hóa an toàn:
-   ```env
-   DATABASE_URL=postgresql://db_user:secret_password@your-cloud-db-host.com:5432/erpacc_prod?sslmode=require
-   NODE_ENV=production
-   PORT=3000
-   ```
-
-2. **Cơ chế Tự động hóa của Hệ thống:**
-   * Trong `src/db/index.ts`, hệ thống tự động nhận diện `DATABASE_URL` online và áp dụng kết nối mã hóa SSL (`rejectUnauthorized: false`).
-   * Nếu có kết nối PostgreSQL thật, hệ thống tự động kiểm tra và cập nhật `schema.sql` (Auto Migration).
-   * Nếu không có kết nối cơ sở dữ liệu thật, hệ thống sẽ tự động bật chế độ dự phòng thông minh (Fallback In-memory Data) giúp ứng dụng vẫn phản hồi mượt mà không bị treo.
-
----
-
-## 🗄️ 4. CẤU TRÚC DỮ LIỆU CHI TIẾT (`schema.sql`)
-
-Dữ liệu được chuẩn hóa song ngữ cho dữ liệu thật:
-
-| Bảng (Table) | Trường dữ liệu Tiếng Việt | Trường dữ liệu Tiếng Anh | Mục đích |
-|---|---|---|---|
-| `categories` | `name_vi`, `description_vi` | `name_en`, `description_en` | Danh mục sản phẩm song ngữ |
-| `brands` | `name_vi`, `description_vi` | `name_en`, `description_en` | Thương hiệu sản phẩm song ngữ |
-| `units` | `name_vi` | `name_en` | Đơn vị tính (Cái/Pcs, Tệp/Pack, Hộp/Box) |
-| `products` | `name_vi`, `description_vi` | `name_en`, `description_en` | Thông tin chi tiết mặt hàng & tồn kho |
-| `v_products_detail` | `category_name_vi`, `uom_name_vi` | `category_name_en`, `uom_name_en` | View truy vấn danh mục & đơn vị tính nhanh |
-
----
-
-## ⚡ 5. QUY TRÌNH CHẠY & KIỂM THỬ DỰ ÁN (COMMANDS)
-
-```bash
-# 1. Chạy chế độ Development (Full-stack Express + Vite HMR)
-npm run dev
-
-# 2. Kiểm tra lỗi Syntax & Typescript Compiler
-npm run lint
-
-# 3. Đóng gói cho Production
-npm run build
-
-# 4. Khởi chạy Production Server
-npm run start
+### 2. Cài đặt PostgreSQL
+```sql
+-- Mở pgAdmin hoặc psql, chạy:
+CREATE DATABASE erpmini;
+CREATE USER erp_user WITH PASSWORD 'erp_password';
+GRANT ALL PRIVILEGES ON DATABASE erpmini TO erp_user;
 ```
+
+### 3. Clone / Copy project
+```
+erpmini/
+├── app/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── static/
+│   └── templates/
+├── config/
+├── run.py
+├── init_db.py
+├── requirements.txt
+└── .env
+```
+
+### 4. Tạo môi trường ảo
+```bash
+# Windows VSCode Terminal
+python -m venv venv
+venv\Scripts\activate
+
+# Cài thư viện
+pip install -r requirements.txt
+```
+
+### 5. Cấu hình .env
+```bash
+# Copy file mẫu
+copy .env.example .env
+
+# Chỉnh sửa .env:
+DATABASE_URL=postgresql://erp_user:erp_password@localhost:5432/erpmini
+SECRET_KEY=your-very-secret-key-2026
+COMPANY_NAME=Tên công ty của bạn
+COMPANY_ADDRESS=Địa chỉ công ty
+COMPANY_TAX_CODE=Mã số thuế
+```
+
+### 6. Khởi tạo database
+```bash
+python init_db.py
+```
+Kết quả:
+```
+✅ Tạo bảng thành công!
+✅ 14 cấu hình
+✅ 26 menu items
+✅ 14 mẫu thông báo
+✅ admin (admin123)
+✅ 3 kho
+✅ 28 tài khoản kế toán
+✅ 10 hàng hóa
+✅ 4 nhà cung cấp
+✅ 5 khách hàng
+```
+
+### 7. Chạy ứng dụng
+```bash
+python run.py
+```
+Mở trình duyệt: **http://localhost:5000**
+
+### 8. Đăng nhập
+| Username | Password | Vai trò |
+|----------|----------|---------|
+| admin    | admin123 | Quản trị |
+| ketoan   | ketoan123| Kế toán  |
+
+---
+
+## Cấu trúc thư mục
+```
+app/
+├── models/
+│   ├── system.py      # Menu, Notification, User, SystemConfig
+│   ├── master.py      # Product, Supplier, Customer, Warehouse, AccountChart
+│   └── transaction.py # StockIn/Out, Inventory, JournalEntry, Debt, VAT
+├── routes/
+│   ├── auth.py        # Đăng nhập/xuất
+│   ├── dashboard.py   # Trang tổng quan
+│   ├── products.py    # Hàng hóa
+│   ├── suppliers.py   # Nhà cung cấp
+│   ├── customers.py   # Khách hàng
+│   ├── warehouses.py  # Kho hàng
+│   ├── stock_in.py    # Phiếu nhập kho
+│   ├── stock_out.py   # Phiếu xuất kho
+│   ├── inventory.py   # Tồn kho & lịch sử
+│   ├── accounting.py  # Kế toán, bút toán
+│   ├── debt.py        # Công nợ
+│   ├── vat.py         # Sổ VAT
+│   ├── settings.py    # Cài đặt hệ thống
+│   └── api.py         # REST API (JSON)
+├── services/
+│   ├── inventory_service.py  # Tồn kho real-time (avg cost)
+│   └── export_service.py     # Excel & PDF export/import
+└── templates/         # HTML Jinja2 templates
+```
+
+## Mở rộng hệ thống
+
+### Thêm menu mới
+```python
+# Vào psql hoặc pgAdmin, thêm vào bảng menus:
+INSERT INTO menus (code, name, url, icon, order_no, module, is_active)
+VALUES ('NEW_MODULE', 'Module mới', '/new-module/', 'fas fa-star', 10, 'new', true);
+```
+
+### Thêm thông báo mới
+```python
+INSERT INTO notifications (code, name, message_template, noti_type, module, is_active)
+VALUES ('NEW_EVENT', 'Sự kiện mới', 'Thông báo: {name} đã xảy ra!', 'info', 'new', true);
+```
+
+### Thêm cấu hình mới
+```python
+INSERT INTO system_configs (key, value, description, group_name)
+VALUES ('new_setting', 'default_value', 'Mô tả cài đặt', 'general');
+```
+
+## API Endpoints
+- `GET /api/products/search?q=keyword` - Tìm hàng hóa
+- `GET /api/products/<id>/stock?warehouse_id=X` - Tồn kho theo kho
+- `GET /api/customers/search?q=keyword` - Tìm khách hàng
+- `GET /api/suppliers/search?q=keyword` - Tìm nhà cung cấp
+- `GET /api/dashboard/stats` - Thống kê dashboard
+
+## Công nghệ sử dụng
+| Thư viện | Mục đích |
+|----------|----------|
+| Flask | Web framework |
+| SQLAlchemy | ORM PostgreSQL |
+| Flask-Login | Xác thực người dùng |
+| Pandas | Xử lý dữ liệu Excel |
+| ReportLab | Tạo file PDF |
+| openpyxl | Đọc/ghi Excel |
+| Bootstrap 5 | UI framework |
+| Chart.js | Biểu đồ dashboard |
+| Select2 | Dropdown tìm kiếm |

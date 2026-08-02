@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Bell, Sun, Moon, Plus, ShieldCheck, PanelLeftClose, PanelLeftOpen, ShoppingBag, AlertTriangle, FileText, CheckCircle2, X, ArrowRight, Globe } from 'lucide-react';
+import { Menu, Bell, Sun, Moon, Plus, ShieldCheck, PanelLeftClose, PanelLeftOpen, ShoppingBag, AlertTriangle, FileText, CheckCircle2, X, ArrowRight, Globe, LogOut, ChevronDown, UserCheck } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useSaaSAuth } from '../contexts/SaaSAuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
@@ -30,12 +30,15 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
 }) => {
   const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage } = useLanguage();
-  const { user } = useAuth();
+  const { erpUser, erpLogout } = useSaaSAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
@@ -87,11 +90,14 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
     location.pathname === '/saas/' ||
     location.pathname === '/saas/dashboard';
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
         setShowNotifications(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -265,19 +271,68 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
           )}
         </div>
 
-        {/* ERP Admin User Badge (Separate from WebShop Customer Account) */}
-        <div className="pl-2 border-l border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold text-xs shadow-xs">
-            A
-          </div>
-          <div className="hidden sm:block text-left">
-            <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate max-w-[130px]">
-              {isEn ? 'ERP Administrator' : 'Quản trị viên ERP'}
-            </p>
-            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold leading-tight flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3 inline" /> Admin System
-            </p>
-          </div>
+        {/* ERP Authenticated User Dropdown Menu */}
+        <div className="pl-2 border-l border-zinc-200 dark:border-zinc-800 relative" ref={userMenuRef}>
+          <button
+            onClick={() => setShowUserDropdown(!showUserDropdown)}
+            className="flex items-center gap-2 p-1 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            <div className="h-8 w-8 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+              {erpUser?.full_name ? erpUser.full_name.charAt(0).toUpperCase() : 'A'}
+            </div>
+            <div className="hidden sm:block text-left pr-1">
+              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate max-w-[130px]">
+                {erpUser?.full_name || (isEn ? 'ERP Staff' : 'Nhân viên ERP')}
+              </p>
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold leading-tight flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 inline" /> {erpUser?.role_name_vi || erpUser?.role_code || 'Role'}
+              </p>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showUserDropdown && (
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-[fade-in_0.15s_ease-out]">
+              <div className="p-3.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-amber-500 text-zinc-950 font-bold text-xs flex items-center justify-center shrink-0">
+                    {erpUser?.full_name ? erpUser.full_name.charAt(0).toUpperCase() : 'A'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                      {erpUser?.full_name}
+                    </p>
+                    <p className="text-[10px] text-zinc-500 truncate">@{erpUser?.username} • {erpUser?.email}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 text-[9px] font-extrabold uppercase rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      Vai trò: {erpUser?.role_code}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2 space-y-1">
+                <Link
+                  to="/"
+                  onClick={() => setShowUserDropdown(false)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                >
+                  <ShoppingBag className="w-4 h-4 text-amber-500" />
+                  <span>Xem Storefront WebShop</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    erpLogout();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer font-semibold"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Đăng Xuất Tài Khoản ERP</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

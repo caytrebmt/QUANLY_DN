@@ -79,16 +79,6 @@ const Header: React.FC = () => {
 
         {/* Right controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Direct SaaS Portal Badge - Visible on Mobile and Desktop */}
-          <Link
-            to="/saas/dashboard"
-            className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-500 text-zinc-950 hover:bg-amber-400 transition-all shadow-xs shrink-0"
-            title="Truy cập Portal SaaS Quản Lý"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span className="text-[11px] sm:text-xs">ERP SaaS</span>
-          </Link>
-
           {/* Theme Toggle Button - Desktop */}
           <button
             onClick={toggleTheme}

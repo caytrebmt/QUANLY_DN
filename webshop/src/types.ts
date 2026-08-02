@@ -130,3 +130,17 @@ export interface Promotion {
   value: number;
   description: string;
 }
+
+export interface ErpUser {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  phone?: string;
+  role_code: "ADMIN" | "SALES" | "ACCOUNTANT" | "WAREHOUSE" | "PURCHASING" | string;
+  role_name_vi: string;
+  role_name_en: string;
+  permissions: string[];
+  preferred_lang?: string;
+}
+

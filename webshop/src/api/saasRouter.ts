@@ -1,13 +1,179 @@
 import { Router, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { query, isDbConnected } from '../db/index';
 
 export const saasRouter = Router();
+
+const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
+
+// Pre-defined demo users for role-based permissions
+const DEMO_ERP_USERS: Record<string, any> = {
+  admin: {
+    id: 1,
+    username: 'admin',
+    email: 'admin@erpacc.vn',
+    full_name: 'Nguyễn Quản Trị',
+    phone: '0912345678',
+    role_code: 'ADMIN',
+    role_name_vi: 'Quản trị viên',
+    role_name_en: 'System Administrator',
+    permissions: ['*'],
+    preferred_lang: 'vi',
+  },
+  sales1: {
+    id: 2,
+    username: 'sales1',
+    email: 'sales@erpacc.vn',
+    full_name: 'John Sales',
+    phone: '0987654321',
+    role_code: 'SALES',
+    role_name_vi: 'Nhân viên Kinh doanh',
+    role_name_en: 'Sales Representative',
+    permissions: ['quotation:view', 'quotation:create', 'order:view', 'customer:view', 'product:view'],
+    preferred_lang: 'vi',
+  },
+  accountant1: {
+    id: 3,
+    username: 'accountant1',
+    email: 'accountant@erpacc.vn',
+    full_name: 'Trần Kế Toán',
+    phone: '0911223344',
+    role_code: 'ACCOUNTANT',
+    role_name_vi: 'Kế toán viên',
+    role_name_en: 'Chief Accountant',
+    permissions: ['finance:view', 'invoice:manage', 'debt:view', 'vat:manage', 'accounting:manage', 'report:view'],
+    preferred_lang: 'vi',
+  },
+  warehouse1: {
+    id: 4,
+    username: 'warehouse1',
+    email: 'warehouse@erpacc.vn',
+    full_name: 'Lê Thủ Kho',
+    phone: '0933445566',
+    role_code: 'WAREHOUSE',
+    role_name_vi: 'Thủ kho',
+    role_name_en: 'Warehouse Manager',
+    permissions: ['inventory:manage', 'stockin:manage', 'stockout:manage', 'warehouse:view', 'product:view'],
+    preferred_lang: 'vi',
+  },
+  purchasing1: {
+    id: 5,
+    username: 'purchasing1',
+    email: 'purchasing@erpacc.vn',
+    full_name: 'Phạm Mua Hàng',
+    phone: '0944556677',
+    role_code: 'PURCHASING',
+    role_name_vi: 'Nhân viên Mua hàng',
+    role_name_en: 'Purchaser',
+    permissions: ['purchase:view', 'supplier:view', 'stockin:manage'],
+    preferred_lang: 'vi',
+  },
+};
+
+// ==========================================
+// ERP AUTHENTICATION ENDPOINTS
+// ==========================================
+saasRouter.post('/auth/login', async (req: Request, res: Response) => {
+  const { username, password } = req.body;
+  if (!username) {
+    return res.status(400).json({ ok: false, message: 'Vui lòng nhập tên đăng nhập ERP.' });
+  }
+
+  const cleanUser = username.toLowerCase().trim();
+
+  // Check DB if connected
+  if (isDbConnected()) {
+    try {
+      const result = await query(
+        `SELECT u.*, r.code as role_code, r.name_vi as role_name_vi, r.name_en as role_name_en 
+         FROM sys_users u 
+         LEFT JOIN sys_roles r ON u.role_id = r.id 
+         WHERE u.username = $1 OR u.email = $1`,
+        [cleanUser]
+      );
+      if (result.rows.length > 0) {
+        const dbUser = result.rows[0];
+        const userObj = {
+          id: dbUser.id,
+          username: dbUser.username,
+          email: dbUser.email,
+          full_name: dbUser.full_name,
+          phone: dbUser.phone,
+          role_code: dbUser.role_code || 'ADMIN',
+          role_name_vi: dbUser.role_name_vi || 'Quản trị viên',
+          role_name_en: dbUser.role_name_en || 'System Administrator',
+          permissions: dbUser.role_code === 'ADMIN' ? ['*'] : DEMO_ERP_USERS[dbUser.username]?.permissions || ['*'],
+          preferred_lang: dbUser.preferred_lang || 'vi',
+        };
+        const token = jwt.sign(
+          { userId: userObj.id, username: userObj.username, role: userObj.role_code },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+        return res.json({
+          ok: true,
+          message: `Đăng nhập ERP thành công với quyền ${userObj.role_name_vi}`,
+          data: { token, user: userObj },
+        });
+      }
+    } catch (err) {
+      console.error('Error authenticating sys_user:', err);
+    }
+  }
+
+  // Fallback to DEMO users matching username prefix/key
+  let matchedUser = DEMO_ERP_USERS[cleanUser];
+  if (!matchedUser) {
+    if (cleanUser.includes('admin')) matchedUser = DEMO_ERP_USERS['admin'];
+    else if (cleanUser.includes('sales')) matchedUser = DEMO_ERP_USERS['sales1'];
+    else if (cleanUser.includes('account') || cleanUser.includes('ketoan')) matchedUser = DEMO_ERP_USERS['accountant1'];
+    else if (cleanUser.includes('ware') || cleanUser.includes('kho')) matchedUser = DEMO_ERP_USERS['warehouse1'];
+    else if (cleanUser.includes('purchas') || cleanUser.includes('muahang')) matchedUser = DEMO_ERP_USERS['purchasing1'];
+  }
+
+  // Accept any non-empty password for demo accounts
+  if (matchedUser) {
+    const token = jwt.sign(
+      { userId: matchedUser.id, username: matchedUser.username, role: matchedUser.role_code },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    return res.json({
+      ok: true,
+      message: `Đăng nhập ERP thành công với quyền ${matchedUser.role_name_vi}`,
+      data: { token, user: matchedUser },
+    });
+  }
+
+  return res.status(401).json({
+    ok: false,
+    message: 'Tài khoản ERP không tồn tại hoặc mật khẩu chưa đúng. Dùng thử: admin / admin123',
+  });
+});
+
+saasRouter.get('/auth/me', async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ ok: false, message: 'Chưa đăng nhập ERP' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const username = decoded.username || 'admin';
+    const userObj = DEMO_ERP_USERS[username] || DEMO_ERP_USERS['admin'];
+    return res.json({ ok: true, data: userObj });
+  } catch (err) {
+    return res.status(401).json({ ok: false, message: 'Phiên đăng nhập ERP đã hết hạn' });
+  }
+});
 
 // Helper to determine language code ('vi' or 'en')
 const getLang = (req: Request): 'vi' | 'en' => {
   const lang = (req.query.lang || req.headers['accept-language'] || 'vi').toString().toLowerCase();
   return lang.startsWith('en') ? 'en' : 'vi';
 };
+
 
 // ==========================================
 // 1. LANGUAGES & TRANSLATIONS DICTIONARY

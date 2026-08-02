@@ -1,0 +1,119 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: erp_db_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp_prod_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: erp_redis_prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-change_me_redis_password}
+    volumes:
+      - redisdata_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp_prod_network
+
+  web:
+    build: .
+    container_name: erp_web_prod
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      FLASK_ENV: production
+      APP_MODE: prod
+      DB_HOST: db
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis_password}@redis:6379/0
+      CACHE_REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis_password}@redis:6379/0
+      USE_PROXY_FIX: "true"
+      PREFERRED_URL_SCHEME: https
+      SESSION_COOKIE_SECURE: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python wait_for_db.py &&
+             gunicorn -c gunicorn.conf.py wsgi:app"
+    volumes:
+      - uploads_prod:/app/app/static/uploads
+      - backups_prod:/app/backups
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/auth/login >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp_prod_network
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: erp_nginx_prod
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - uploads_prod:/app/app/static/uploads:ro
+    networks:
+      - erp_prod_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: erp_pgadmin_prod
+    restart: unless-stopped
+    profiles: ["admin"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data_prod:/var/lib/pgadmin
+    networks:
+      - erp_prod_network
+
+volumes:
+  pgdata_prod:
+  redisdata_prod:
+  uploads_prod:
+  backups_prod:
+  pgadmin_data_prod:
+
+networks:
+  erp_prod_network:
+    driver: bridge

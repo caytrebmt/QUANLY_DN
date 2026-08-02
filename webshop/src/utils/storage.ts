@@ -3,6 +3,9 @@ const REFRESH_TOKEN_KEY = "erp_shop_refresh_token";
 const USER_KEY = "erp_shop_current_user";
 const GUEST_CART_ID_KEY = "erp_shop_guest_cart_id";
 
+const ERP_ACCESS_TOKEN_KEY = "erp_saas_access_token";
+const ERP_USER_KEY = "erp_saas_user";
+
 export const storage = {
   getAccessToken(): string | null {
     return localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -40,6 +43,38 @@ export const storage = {
     localStorage.removeItem(USER_KEY);
   },
 
+  // ERP SaaS Auth Storage
+  getErpToken(): string | null {
+    return localStorage.getItem(ERP_ACCESS_TOKEN_KEY);
+  },
+  setErpToken(token: string): void {
+    localStorage.setItem(ERP_ACCESS_TOKEN_KEY, token);
+  },
+  removeErpToken(): void {
+    localStorage.removeItem(ERP_ACCESS_TOKEN_KEY);
+  },
+
+  getErpUser(): any | null {
+    const userStr = localStorage.getItem(ERP_USER_KEY);
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  },
+  setErpUser(user: any): void {
+    localStorage.setItem(ERP_USER_KEY, JSON.stringify(user));
+  },
+  removeErpUser(): void {
+    localStorage.removeItem(ERP_USER_KEY);
+  },
+
+  clearErpAuth(): void {
+    localStorage.removeItem(ERP_ACCESS_TOKEN_KEY);
+    localStorage.removeItem(ERP_USER_KEY);
+  },
+
   getGuestCartId(): string {
     let id = localStorage.getItem(GUEST_CART_ID_KEY);
     if (!id) {
@@ -55,3 +90,4 @@ export const storage = {
     localStorage.removeItem(USER_KEY);
   },
 };
+

@@ -23,7 +23,7 @@ import {
   Percent,
   ChevronLeft,
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useSaaSAuth } from '../contexts/SaaSAuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SaaSSidebarProps {
@@ -39,12 +39,33 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
   isCollapsed = false,
   onToggleCollapse,
 }) => {
-  const { user, logout } = useAuth();
-  const { language, t } = useLanguage();
+  const { erpUser, erpLogout } = useSaaSAuth();
+  const { language } = useLanguage();
 
   const isEn = language === 'en';
+  const role = erpUser?.role_code || 'ADMIN';
 
-  const navGroups = [
+  // Role based filtering logic
+  const isAllowedPath = (path: string): boolean => {
+    if (role === 'ADMIN') return true;
+    if (path === '/saas/dashboard' || path === '/') return true;
+
+    if (role === 'SALES') {
+      return ['/saas/web-orders', '/saas/products', '/saas/categories-units', '/saas/customers', '/saas/quotations'].includes(path);
+    }
+    if (role === 'ACCOUNTANT') {
+      return ['/saas/web-orders', '/saas/debt', '/saas/vat', '/saas/accounting', '/saas/reports'].includes(path);
+    }
+    if (role === 'WAREHOUSE') {
+      return ['/saas/products', '/saas/warehouses', '/saas/stock-in', '/saas/stock-out', '/saas/stocktaking', '/saas/inventory'].includes(path);
+    }
+    if (role === 'PURCHASING') {
+      return ['/saas/products', '/saas/suppliers', '/saas/stock-in'].includes(path);
+    }
+    return true;
+  };
+
+  const navGroupsRaw = [
     {
       title: isEn ? 'OVERVIEW & SALES' : 'TỔNG QUAN & BÁN HÀNG',
       items: [
@@ -84,6 +105,15 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
       ],
     },
   ];
+
+  // Filter groups and items
+  const navGroups = navGroupsRaw
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => isAllowedPath(item.path)),
+    }))
+    .filter((group) => group.items.length > 0);
+
 
   return (
     <>
@@ -172,28 +202,28 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
           ))}
         </div>
 
-        {/* Footer ERP Admin User Info */}
+        {/* Footer ERP User Info */}
         <div className="p-3 border-t border-zinc-800 bg-zinc-950/50">
           <div className="flex items-center justify-between p-2 rounded-xl bg-zinc-800/40">
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="h-8 w-8 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-                A
+                {erpUser?.full_name ? erpUser.full_name.charAt(0).toUpperCase() : 'A'}
               </div>
               {!isCollapsed && (
                 <div className="overflow-hidden">
                   <p className="text-xs font-bold text-zinc-200 truncate">
-                    {isEn ? 'ERP Administrator' : 'Quản trị viên ERP'}
+                    {erpUser?.full_name || (isEn ? 'ERP Staff' : 'Nhân viên ERP')}
                   </p>
-                  <p className="text-[10px] text-amber-400 font-medium truncate">admin@erp.vn (Admin)</p>
+                  <p className="text-[10px] text-amber-400 font-medium truncate">
+                    {erpUser?.role_name_vi || erpUser?.role_code}
+                  </p>
                 </div>
               )}
             </div>
             {!isCollapsed && (
               <button
-                onClick={() => {
-                  logout();
-                }}
-                className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors shrink-0"
+                onClick={() => erpLogout()}
+                className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
                 title={isEn ? 'Logout ERP Account' : 'Thoát tài khoản ERP'}
               >
                 <LogOut className="h-4 w-4" />
