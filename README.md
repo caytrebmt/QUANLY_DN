@@ -1,170 +1,87 @@
-# 🏢 ERPmini - Hệ thống ERP quản lý kho
-
-## Tính năng chính
-- ✅ Quản lý **hàng hóa** (CRUD, import/export Excel)
-- ✅ Quản lý **nhà cung cấp** & **khách hàng** (import/export Excel)
-- ✅ **Phiếu nhập kho** với VAT đầu vào (in PDF)
-- ✅ **Phiếu xuất kho** với VAT đầu ra (in PDF)
-- ✅ **Tồn kho real-time** (giá vốn bình quân gia quyền)
-- ✅ **Lịch sử biến động** tồn kho
-- ✅ **Công nợ** phải thu / phải trả + thanh toán
-- ✅ **Sổ VAT** đầu vào / đầu ra (bảng kê theo tháng)
-- ✅ **Kế toán**: nhật ký chung, hệ thống tài khoản, cân đối số phát sinh
-- ✅ **Menu & Thông báo** định nghĩa bằng bảng DB (dễ mở rộng)
-- ✅ Export **Excel** & **PDF** (pandas, reportlab)
-- ✅ Import Excel cho hàng hóa, KH, NCC
-
-## Cài đặt trên Windows + VSCode
-
-### 1. Yêu cầu hệ thống
-- Python 3.10+
-- PostgreSQL 14+
-- VSCode
-
-### 2. Cài đặt PostgreSQL
-```sql
--- Mở pgAdmin hoặc psql, chạy:
-CREATE DATABASE erpmini;
-CREATE USER erp_user WITH PASSWORD 'erp_password';
-GRANT ALL PRIVILEGES ON DATABASE erpmini TO erp_user;
-```
-
-### 3. Clone / Copy project
-```
-erpmini/
-├── app/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   ├── static/
-│   └── templates/
-├── config/
-├── run.py
-├── init_db.py
-├── requirements.txt
-└── .env
-```
-
-### 4. Tạo môi trường ảo
-```bash
-# Windows VSCode Terminal
-python -m venv venv
-venv\Scripts\activate
-
-# Cài thư viện
-pip install -r requirements.txt
-```
-
-### 5. Cấu hình .env
-```bash
-# Copy file mẫu
-copy .env.example .env
-
-# Chỉnh sửa .env:
-DATABASE_URL=postgresql://erp_user:erp_password@localhost:5432/erpmini
-SECRET_KEY=your-very-secret-key-2026
-COMPANY_NAME=Tên công ty của bạn
-COMPANY_ADDRESS=Địa chỉ công ty
-COMPANY_TAX_CODE=Mã số thuế
-```
-
-### 6. Khởi tạo database
-```bash
-python init_db.py
-```
-Kết quả:
-```
-✅ Tạo bảng thành công!
-✅ 14 cấu hình
-✅ 26 menu items
-✅ 14 mẫu thông báo
-✅ admin (admin123)
-✅ 3 kho
-✅ 28 tài khoản kế toán
-✅ 10 hàng hóa
-✅ 4 nhà cung cấp
-✅ 5 khách hàng
-```
-
-### 7. Chạy ứng dụng
-```bash
-python run.py
-```
-Mở trình duyệt: **http://localhost:5000**
-
-### 8. Đăng nhập
-| Username | Password | Vai trò |
-|----------|----------|---------|
-| admin    | admin123 | Quản trị |
-| ketoan   | ketoan123| Kế toán  |
+# 📘 HƯỚNG DẪN KẾT NỐI CƠ SỞ DỮ LIỆU SUPABASE & DEPLOY NETLIFY (FULL-STACK WEBSHOP & ERP SAAS)
 
 ---
 
-## Cấu trúc thư mục
-```
-app/
-├── models/
-│   ├── system.py      # Menu, Notification, User, SystemConfig
-│   ├── master.py      # Product, Supplier, Customer, Warehouse, AccountChart
-│   └── transaction.py # StockIn/Out, Inventory, JournalEntry, Debt, VAT
-├── routes/
-│   ├── auth.py        # Đăng nhập/xuất
-│   ├── dashboard.py   # Trang tổng quan
-│   ├── products.py    # Hàng hóa
-│   ├── suppliers.py   # Nhà cung cấp
-│   ├── customers.py   # Khách hàng
-│   ├── warehouses.py  # Kho hàng
-│   ├── stock_in.py    # Phiếu nhập kho
-│   ├── stock_out.py   # Phiếu xuất kho
-│   ├── inventory.py   # Tồn kho & lịch sử
-│   ├── accounting.py  # Kế toán, bút toán
-│   ├── debt.py        # Công nợ
-│   ├── vat.py         # Sổ VAT
-│   ├── settings.py    # Cài đặt hệ thống
-│   └── api.py         # REST API (JSON)
-├── services/
-│   ├── inventory_service.py  # Tồn kho real-time (avg cost)
-│   └── export_service.py     # Excel & PDF export/import
-└── templates/         # HTML Jinja2 templates
-```
+## 🚀 1. TỔNG QUAN HỆ THỐNG & TÍNH NĂNG DEPLOY
 
-## Mở rộng hệ thống
+Dự án **ERP-VIỆT SaaS Enterprise & WebShop E-Commerce** được thiết kế nguyên khối full-stack hiện đại:
+* **Cửa hàng trực tuyến WebShop (`/`):** Xem sản phẩm, giỏ hàng, đặt hàng trực tuyến, tra cứu đơn hàng.
+* **Hệ thống Quản trị ERP SaaS (`/saas`):** Đăng nhập phân quyền nhân viên (`/saas/login`), Dashboard, Quản lý đơn hàng, Kho bãi, Báo giá, Công nợ, Thuế GTGT VAT, Kế toán TT200 và Báo cáo tài chính.
+* **Tự động thích ứng trên Netlify:** Chạy song song cả Giao diện Frontend Single Page App (SPA) và Backend API Node.js/Express serverless trên Netlify Functions.
 
-### Thêm menu mới
-```python
-# Vào psql hoặc pgAdmin, thêm vào bảng menus:
-INSERT INTO menus (code, name, url, icon, order_no, module, is_active)
-VALUES ('NEW_MODULE', 'Module mới', '/new-module/', 'fas fa-star', 10, 'new', true);
-```
+---
 
-### Thêm thông báo mới
-```python
-INSERT INTO notifications (code, name, message_template, noti_type, module, is_active)
-VALUES ('NEW_EVENT', 'Sự kiện mới', 'Thông báo: {name} đã xảy ra!', 'info', 'new', true);
+## 🗄️ 2. KẾT NỐI CƠ SỞ DỮ LIỆU SUPABASE (POSTGRESQL)
+
+Dự án sử dụng trình kết nối PostgreSQL `pg` thông minh tự động hỗ trợ kết nối SSL mã hóa tới **Supabase Cloud Database**.
+
+### Các bước lấy thông số Supabase:
+1. Đăng nhập vào [Supabase Dashboard](https://supabase.com/dashboard) -> Chọn dự án của bạn (hoặc tạo dự án mới).
+2. Vào **Project Settings** -> **Database**.
+3. Tại phần **Connection String**, chọn tab **URI** (hoặc **Transaction Pooler** - Cổng `6543` thích hợp cho Serverless/Netlify):
+   ```
+   postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+   ```
+4. Dán chuỗi này vào biến môi trường `SUPABASE_DATABASE_URL` hoặc `DATABASE_URL`.
+
+### Cơ chế Auto-Migration tự động với Supabase:
+* Khi biến `SUPABASE_DATABASE_URL` hoặc `DATABASE_URL` được khai báo, hệ thống sẽ tự động kết nối bằng SSL (`ssl: { rejectUnauthorized: false }`).
+* Hệ thống tự động khởi tạo cấu trúc cơ sở dữ liệu song ngữ đầy đủ từ tệp `schema.sql` (bảng sản phẩm, danh mục, đơn hàng, hóa đơn VAT, sổ cái kế toán...).
+
+---
+
+## 🌐 3. HƯỚNG DẪN DEPLOY TRÊN NETLIFY (CHI TIẾT TỪ A-Z)
+
+Dự án đã tích hợp sẵn tệp cấu hình chuẩn Netlify `netlify.toml`, Netlify Function (`netlify/functions/api.ts`) và quy tắc điều hướng `_redirects` giúp chạy hoàn hảo cả Frontend SPA lẫn Backend API trên Netlify.
+
+### Step 1: Push mã nguồn lên GitHub / GitLab
+```bash
+git add .
+git commit -m "Deploy WebShop & ERP SaaS with Supabase & Netlify Functions"
+git push origin main
 ```
 
-### Thêm cấu hình mới
-```python
-INSERT INTO system_configs (key, value, description, group_name)
-VALUES ('new_setting', 'default_value', 'Mô tả cài đặt', 'general');
+### Step 2: Tạo Site mới trên Netlify
+1. Đăng nhập vào [Netlify Console](https://app.netlify.com).
+2. Bấm **Add new site** -> **Import an existing project** -> Chọn **GitHub**.
+3. Chọn Repository chứa dự án của bạn.
+
+### Step 3: Cấu hình Build Settings trên Netlify
+Netlify sẽ tự động nhận diện tệp `netlify.toml`. Vui lòng xác nhận các thông số:
+* **Build command:** `npm run build`
+* **Publish directory:** `dist`
+* **Functions directory:** `netlify/functions`
+
+### Step 4: Cấu hình Environment Variables (Biến Môi Trường) trên Netlify
+Vào **Site settings** -> **Environment variables** -> Bấm **Add a variable** và thêm các biến:
+
+| Tên biến (Key) | Giá trị (Value) | Mô tả |
+|---|---|---|
+| `SUPABASE_DATABASE_URL` | `postgresql://postgres.[REF]:[PASS]@...:6543/postgres` | Chuỗi kết nối Supabase Postgres |
+| `VITE_SUPABASE_URL` | `https://[YOUR-REF].supabase.co` | URL REST API Supabase |
+| `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1Ni...` | Khoá Anon Key Supabase |
+| `JWT_SECRET_KEY` | `erpacc-super-secret-jwt-key-2026` | Khóa mã hóa JWT xác thực ERP |
+| `NODE_ENV` | `production` | Chế độ Production |
+| `VITE_API_BASE_URL` | `/api` | Đường dẫn gốc API trên Netlify |
+
+### Step 5: Đội ngũ & Kiểm thử sau khi Deploy
+Bấm **Deploy site**.
+Sau khi Netlify hoàn tất build:
+* **Truy cập WebShop Bán Hàng:** `https://your-site.netlify.app/`
+* **Truy cập Cổng Đăng Nhập ERP SaaS:** `https://your-site.netlify.app/saas/login` (Thử đăng nhập tài khoản `admin` / `admin123` hoặc `sales1`, `accountant1`...)
+* **Kiểm tra API Health Check:** `https://your-site.netlify.app/api/health`
+
+---
+
+## ⚡ 4. LỆNH CHẠY & MÔI TRƯỜNG CỤC BỘ (LOCAL DEVELOPMENT)
+
+```bash
+# 1. Chạy chế độ Development trên máy máy local
+npm run dev
+
+# 2. Kiểm tra lỗi Typescript & Linter
+npm run lint
+
+# 3. Đóng gói kiểm thử bản Build Netlify
+npm run build
 ```
-
-## API Endpoints
-- `GET /api/products/search?q=keyword` - Tìm hàng hóa
-- `GET /api/products/<id>/stock?warehouse_id=X` - Tồn kho theo kho
-- `GET /api/customers/search?q=keyword` - Tìm khách hàng
-- `GET /api/suppliers/search?q=keyword` - Tìm nhà cung cấp
-- `GET /api/dashboard/stats` - Thống kê dashboard
-
-## Công nghệ sử dụng
-| Thư viện | Mục đích |
-|----------|----------|
-| Flask | Web framework |
-| SQLAlchemy | ORM PostgreSQL |
-| Flask-Login | Xác thực người dùng |
-| Pandas | Xử lý dữ liệu Excel |
-| ReportLab | Tạo file PDF |
-| openpyxl | Đọc/ghi Excel |
-| Bootstrap 5 | UI framework |
-| Chart.js | Biểu đồ dashboard |
-| Select2 | Dropdown tìm kiếm |
