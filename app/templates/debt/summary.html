@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Tổng hợp công nợ{% endblock %}
+{% block page_title %}<i class="fas fa-table me-2"></i>Tổng hợp công nợ theo đối tác{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('debt.summary', partner_type='customer') }}"
+         class="btn btn-sm {{ 'btn-primary' if partner_type=='customer' else 'btn-outline-primary' }}">
+        Phải thu (KH)
+      </a>
+      <a href="{{ url_for('debt.summary', partner_type='supplier') }}"
+         class="btn btn-sm {{ 'btn-warning' if partner_type=='supplier' else 'btn-outline-warning' }}">
+        Phải trả (NCC)
+      </a>
+    </div>
+    <span class="fw-semibold">
+      Tổng: {{ summary_data|sum(attribute='balance')|round(0)|int|currency }} VND
+    </span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+      <thead>
+        <tr>
+          <th>Đối tác</th><th>Mã</th>
+          <th class="text-end">Tổng phát sinh</th>
+          <th class="text-end">Đã TT</th>
+          <th class="text-end">Còn lại</th>
+          <th class="text-center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in summary_data %}
+        <tr>
+          <td class="fw-semibold">{{ row.partner.name }}</td>
+          <td><code>{{ row.partner.code }}</code></td>
+          <td class="text-end">{{ row.total|currency }}</td>
+          <td class="text-end text-success">{{ row.paid|currency }}</td>
+          <td class="text-end fw-bold {{ 'text-danger' if row.balance > 0 else '' }}">{{ row.balance|currency }}</td>
+          <td class="text-center">
+            <a href="{{ url_for('debt.index', partner_type=partner_type) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
+              <i class="fas fa-list"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Không có dữ liệu công nợ</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

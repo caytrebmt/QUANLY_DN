@@ -1,0 +1,6 @@
+{
+  "name": "WebShop - ERPACC",
+  "description": "Integrated Vietnamese WebShop featuring product catalog, cart, checkout, order tracking, account profile, and promotions management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

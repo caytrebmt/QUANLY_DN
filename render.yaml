@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: erpacc-webshop
+    runtime: node
+    plan: free
+    rootDir: webshop
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ERPACC_BACKEND_URL
+        value: https://erpacc-production.up.railway.app
+      - key: PORT
+        value: 3000

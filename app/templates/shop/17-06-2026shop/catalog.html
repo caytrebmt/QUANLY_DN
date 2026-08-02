@@ -1,0 +1,266 @@
+<!-- templates/shop/catalog.html -->
+{% extends "shop/base.html" %}
+
+{% block title %}Sản phẩm{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm text-gray-500 mb-6 overflow-x-auto">
+        <a href="{{ url_for('shop.catalog') }}" class="hover:text-accent">Trang chủ</a>
+        <i class="fas fa-chevron-right text-xs"></i>
+        <span class="text-gray-800 font-medium">Sản phẩm</span>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Sidebar Filters -->
+        <aside class="lg:w-64 flex-shrink-0">
+            <!-- Categories -->
+            <div class="bg-white rounded-xl border border-gray-100 p-4 mb-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-list text-accent text-sm"></i> Danh mục</h3>
+                <div class="space-y-1">
+                    <a href="{{ url_for('shop.catalog') }}" class="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-gray-50 {% if not request.args.get('category') %}text-accent font-medium bg-gray-50{% else %}text-gray-600{% endif %}">
+                        <span>Tất cả</span><span class="text-xs text-gray-400">{{ listings.total if listings else 0 }}</span>
+                    </a>
+                    {% for cat in categories %}
+                    <a href="{{ url_for('shop.catalog', category=cat.slug) }}" class="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-gray-50 {% if request.args.get('category') == cat.slug %}text-accent font-medium bg-gray-50{% else %}text-gray-600{% endif %}">
+                        <span>{{ cat.name }}</span><span class="text-xs text-gray-400">{{ cat.product_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Price Filter -->
+            <div class="bg-white rounded-xl border border-gray-100 p-4 mb-4">
+                <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-filter text-accent text-sm mr-2"></i>Lọc theo giá</h3>
+                <div class="flex gap-2 mb-3">
+                    <input type="number" id="priceMin" placeholder="Từ" class="w-1/2 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-accent focus:outline-none">
+                    <input type="number" id="priceMax" placeholder="Đến" class="w-1/2 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-accent focus:outline-none">
+                </div>
+                <button onclick="applyPriceFilter()" class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primaryDark">Áp dụng</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1">
+            <!-- Sort & View -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-500">Sắp xếp:</span>
+                    <div class="flex gap-1">
+                        <button onclick="sortProducts('default')" class="sort-btn px-3 py-1.5 rounded-lg text-sm {% if sort == 'default' %}bg-gray-100 text-gray-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}">Mặc định</button>
+                        <button onclick="sortProducts('price_asc')" class="sort-btn px-3 py-1.5 rounded-lg text-sm {% if sort == 'price_asc' %}bg-gray-100 text-gray-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}">Giá tăng</button>
+                        <button onclick="sortProducts('price_desc')" class="sort-btn px-3 py-1.5 rounded-lg text-sm {% if sort == 'price_desc' %}bg-gray-100 text-gray-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}">Giá giảm</button>
+                        <button onclick="sortProducts('newest')" class="sort-btn px-3 py-1.5 rounded-lg text-sm {% if sort == 'newest' %}bg-gray-100 text-gray-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}">Mới nhất</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleView()" class="p-2 rounded-lg hover:bg-gray-100"><i id="viewIcon" class="fas fa-th-large text-gray-500"></i></button>
+                    <span class="text-sm text-gray-500">{{ listings.items|length }}/{{ listings.total }} sản phẩm</span>
+                </div>
+            </div>
+            
+            <!-- Products Grid -->
+                        
+            <div id="productsContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {% for listing in listings.items %}
+                <div class="product-card bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full">
+                    <!-- Image Container - Fixed aspect ratio -->
+                    <div class="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
+                        <a href="{{ url_for('shop.product_detail', slug=listing.slug) }}" class="block w-full h-full flex items-center justify-center">
+                            <img src="{{ listing.display_image or listing.product.main_image or url_for('shop.product_placeholder', code=listing.product.code if listing.product else 'ERP', name=listing.display_name()) }}" 
+                                alt="{{ listing.display_name() }}" 
+                                class="max-w-full max-h-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                                loading="lazy"
+                                onerror="this.src='{{ url_for('shop.product_placeholder', code=listing.product.code if listing.product else 'ERP', name=listing.display_name()) }}'">
+                        </a>
+                        <!-- Badges -->
+                        {% if listing.stock_cached == 0 %}
+                            <span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded z-10">Hết hàng</span>
+                        {% elif listing.stock_cached <= 5 %}
+                            <span class="absolute top-2 left-2 bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded z-10">Sắp hết</span>
+                        {% endif %}
+
+                        {% if listing.compare_at_price and listing.compare_at_price > listing.display_retail_price() %}
+                            <span class="absolute top-2 right-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded z-10">
+                            -{{ ((listing.compare_at_price - listing.display_retail_price()) / listing.compare_at_price * 100)|int }}%
+                            </span>
+                        {% endif %}
+                        <!-- Wishlist Button -->
+                        <button onclick="toggleWishlist({{ listing.id }}, this)" class="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-red-50 transition z-10">
+                            <i class="far fa-heart text-gray-400 text-sm"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Product Info - Fixed height text areas -->
+                    <div class="p-3 flex flex-col flex-grow">
+                        <a href="{{ url_for('shop.product_detail', slug=listing.slug) }}" class="block flex-grow">
+                            <h3 class="font-medium text-gray-800 text-sm line-clamp-2 hover:text-accent min-h-[40px]">
+                                {{ listing.display_name() }}
+                            </h3>
+                        </a>
+                        {% if listing.product and listing.product.brand %}
+                        <p class="text-xs text-gray-400 mt-1 line-clamp-1">{{ listing.product.brand }}</p>
+                        {% else %}
+                        <p class="text-xs text-gray-400 mt-1 invisible">Placeholder</p>
+                        {% endif %}
+                        
+                        <!-- Price - Fixed height -->
+                        <div class="mt-2 min-h-[48px]">
+                            {% if listing.contact_for_price %}
+                            <span class="text-accent font-semibold text-sm">Liên hệ</span>
+                            {% else %}
+                            <div class="flex items-baseline gap-2 flex-wrap">
+                                <span class="text-primary font-bold text-base">{{ listing.display_retail_price()|currency }}</span>
+                                {% if listing.compare_at_price and listing.compare_at_price > listing.display_retail_price() %}
+                                <span class="text-gray-400 text-xs line-through">{{ listing.compare_at_price|currency }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Add to Cart Button -->
+                        <button onclick="ajaxAddToCart({{ listing.id }}, 1, this)" 
+                                class="w-full mt-3 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primaryDark transition flex items-center justify-center gap-2">
+                            <i class="fas fa-cart-plus text-xs"></i>Thêm giỏ
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>  
+            {% if not listings.items %}
+            <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
+                <i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Không tìm thấy sản phẩm</h3>
+                <p class="text-gray-500 mb-4">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                <a href="{{ url_for('shop.catalog') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg">Xóa bộ lọc</a>
+            </div>
+            {% endif %}
+            
+            <!-- Pagination -->
+            {% if listings.pages and listings.pages > 1 %}
+            <div class="flex justify-center mt-8">
+                <div class="flex gap-2 flex-wrap">
+                    {% if listings.has_prev %}
+                    <a href="{{ url_for('shop.catalog', page=listings.prev_num, search=search) }}" class="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-chevron-left text-sm"></i>
+                    </a>
+                    {% endif %}
+                    
+                    {% for page in listings.iter_pages() %}
+                        {% if page %}
+                        <a href="{{ url_for('shop.catalog', page=page, search=search) }}" class="px-3.5 py-2 rounded-lg transition {% if page == listings.page %}bg-primary text-white{% else %}border border-gray-200 hover:bg-gray-50{% endif %}">
+                            {{ page }}
+                        </a>
+                        {% elif page is not none %}
+                        <span class="px-2 py-2 text-gray-400">...</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if listings.has_next %}
+                    <a href="{{ url_for('shop.catalog', page=listings.next_num, search=search) }}" class="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-chevron-right text-sm"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get current date for "new" badge
+    const now = new Date();
+    
+    function getQueryParam(p) { 
+        return new URLSearchParams(window.location.search).get(p); 
+    }
+    
+    function applyPriceFilter() {
+        const url = new URL(window.location.href);
+        const min = document.getElementById('priceMin').value, max = document.getElementById('priceMax').value;
+        if (min) url.searchParams.set('price_min', min); else url.searchParams.delete('price_min');
+        if (max) url.searchParams.set('price_max', max); else url.searchParams.delete('price_max');
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    }
+    
+    function sortProducts(type) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', type);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    }
+    
+    function toggleView() {
+        const container = document.getElementById('productsContainer'), icon = document.getElementById('viewIcon');
+        const isGrid = container.classList.contains('grid');
+        if (isGrid) {
+            container.classList.remove('grid', 'grid-cols-2', 'sm:grid-cols-3', 'lg:grid-cols-4');
+            container.classList.add('flex', 'flex-col', 'gap-3');
+            icon.classList.remove('fa-th-large'); icon.classList.add('fa-list');
+            localStorage.setItem('productView', 'list');
+        } else {
+            container.classList.remove('flex', 'flex-col', 'gap-3');
+            container.classList.add('grid', 'grid-cols-2', 'sm:grid-cols-3', 'lg:grid-cols-4', 'gap-3', 'md:gap-4');
+            icon.classList.remove('fa-list'); icon.classList.add('fa-th-large');
+            localStorage.setItem('productView', 'grid');
+        }
+    }
+    
+    // Restore view preference
+    if (localStorage.getItem('productView') === 'list') {
+        const container = document.getElementById('productsContainer');
+        if (container) {
+            container.classList.remove('grid', 'grid-cols-2', 'sm:grid-cols-3', 'lg:grid-cols-4');
+            container.classList.add('flex', 'flex-col', 'gap-3');
+            const icon = document.getElementById('viewIcon');
+            if (icon) {
+                icon.classList.remove('fa-th-large');
+                icon.classList.add('fa-list');
+            }
+        }
+    }
+    
+    // Price filter initialization
+    const priceMin = getQueryParam('price_min');
+    const priceMax = getQueryParam('price_max');
+    if (priceMin) document.getElementById('priceMin').value = priceMin;
+    if (priceMax) document.getElementById('priceMax').value = priceMax;
+    
+    // Highlight active sort button
+    const currentSort = getQueryParam('sort') || 'default';
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        const sortType = btn.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+        if (sortType === currentSort) {
+            btn.classList.add('bg-gray-100', 'text-gray-700');
+            btn.classList.remove('text-gray-600');
+        }
+    });
+    
+    async function toggleWishlist(productId, btn) {
+        try {
+            const res = await fetch(`/shop/wishlist/toggle/${productId}`, { 
+                method: 'POST', 
+                headers: { 'X-CSRFToken': getCsrf() } 
+            });
+            const data = await res.json();
+            if (res.ok) {
+                const icon = btn.querySelector('i');
+                if (data.action === 'added') {
+                    icon.classList.remove('far'); icon.classList.add('fas', 'text-red-500');
+                    showToast('Đã thêm yêu thích', 'success');
+                } else {
+                    icon.classList.remove('fas', 'text-red-500'); icon.classList.add('far');
+                    showToast('Đã xóa yêu thích', 'info');
+                }
+            } else if (data.requires_login) {
+                window.location.href = "{{ url_for('shop.login') }}";
+            }
+        } catch { 
+            showToast('Lỗi kết nối', 'error'); 
+        }
+    }
+</script>
+{% endblock %}

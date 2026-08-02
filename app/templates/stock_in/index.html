@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Stock-in list') }}{% endblock %}
+{% block page_title %}<i class="fas fa-arrow-circle-down me-2 text-success"></i>{{ t('Stock-in list') }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>{{ t('Stock-in list') }}</span>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('stock_in.export_excel') }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>{{ t('Export Excel') }}
+      </a>
+      <a href="{{ url_for('stock_in.create') }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-plus me-1"></i>{{ t('Create') }}
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-3">
+        <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
+               placeholder="{{ t('Filter code or invoice') }}">
+      </div>
+      <div class="col-md-3">
+        <select name="supplier_id" class="form-select form-select-sm">
+          <option value="">{{ t('All suppliers') }}</option>
+          {% for s in suppliers %}
+          <option value="{{ s.id }}" {{ 'selected' if supplier_id and supplier_id==s.id|string else '' }}>
+            {{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="status" class="form-select form-select-sm">
+          <option value="">{{ t('All status') }}</option>
+          <option value="draft" {{ 'selected' if status=='draft' }}>{{ t('Draft') }}</option>
+          <option value="confirmed" {{ 'selected' if status=='confirmed' }}>{{ t('Confirmed') }}</option>
+          <option value="cancelled" {{ 'selected' if status=='cancelled' }}>{{ t('Cancelled') }}</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+          <input type="text"
+                 class="form-control js-erp-date-range"
+                 data-auto-submit="1"
+                 placeholder="Chọn khoảng ngày">
+          <input type="hidden" name="from_date" value="{{ from_date }}">
+          <input type="hidden" name="to_date" value="{{ to_date }}">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+        </div>
+        <div class="btn-group btn-group-sm mt-1 w-100">
+          <button type="button" class="btn btn-outline-secondary" data-range-preset="7">7 ngày</button>
+          <button type="button" class="btn btn-outline-secondary" data-range-preset="30">30 ngày</button>
+          <button type="button" class="btn btn-outline-secondary" data-range-preset="month">Tháng này</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light" data-expand-url="/api/stock-in/detail">
+        <thead>
+          <tr>
+            <th>{{ t('Code') }}</th><th>{{ t('Date') }}</th><th>{{ t('Supplier') }}</th><th>{{ t('Warehouse') }}</th>
+            <th>{{ t('Supplier invoice no.') }}</th><th class="text-end">{{ t('Subtotal') }}</th>
+            <th class="text-end">{{ t('VAT') }}</th><th class="text-end">{{ t('Total') }}</th>
+            <th class="text-center">{{ t('Status') }}</th><th class="text-center no-print">{{ t('Actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for si in stock_ins.items %}
+          <tr>
+            <td><a href="{{ url_for('stock_in.detail', id=si.id) }}" class="fw-semibold">{{ si.code }}</a></td>
+            <td>{{ si.date|dateformat }}</td>
+            <td>{{ si.supplier.name if si.supplier else '-' }}</td>
+            <td>{{ si.warehouse.name if si.warehouse else '-' }}</td>
+            <td>{{ si.invoice_no or '-' }}</td>
+            <td class="text-end">{{ si.subtotal|currency }}</td>
+            <td class="text-end text-info">{{ si.vat_amount|currency }}</td>
+            <td class="text-end fw-bold">{{ si.total_amount|currency }}</td>
+            <td class="text-center"><span class="badge badge-{{ (si.status or '')|lower }}">
+              {{ si.status|status_label }}
+            </span></td>
+            <td class="text-center no-print">
+              <a href="{{ url_for('stock_in.detail', id=si.id) }}" class="btn btn-sm btn-outline-info py-0 px-2" title="Chi tiết">
+                <i class="fas fa-eye"></i>
+              </a>
+              {% if (si.status or '')|lower == 'draft' %}
+              <a href="{{ url_for('stock_in.edit', id=si.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
+                <i class="fas fa-edit"></i>
+              </a>
+              {% endif %}
+              <button type="button"
+                  class="btn btn-sm btn-outline-secondary py-0 px-2 btn-erp-print"
+                  data-print-url="{{ url_for('stock_in.print_html', id=si.id) }}"
+                  title="In phiếu">
+                <i class="fas fa-print"></i>
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="text-center text-muted py-4">Không có phiếu nhập nào</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if stock_ins.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ stock_ins.total }} phiếu</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in stock_ins.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==stock_ins.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('stock_in.index', page=page, search=search, status=status, supplier_id=supplier_id, from_date=from_date, to_date=to_date) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

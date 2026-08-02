@@ -1,0 +1,111 @@
+{% extends "base.html" %} {% block title %}Chi tiết đơn online{% endblock %} {%
+block page_title %}
+<i class="fas fa-receipt me-2 text-primary"></i>
+E-commerce - Chi tiết đơn online {% endblock %} {% block content %}
+<div class="card">
+  <div
+    class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2"
+  >
+    <div>
+      <div class="fw-semibold fs-5">Đơn: {{ order.code }}</div>
+      <div class="text-muted">
+        Ngày: {{ order.created_at|dateformat }} | Khách: {{ order.customer_name
+        }} {% if order.customer_phone %}({{ order.customer_phone }}){% endif %}
+      </div>
+      {% if order.sync_status %}
+      <div class="small mt-1">
+        Sync: {% if order.sync_status == 'synced' %}
+        <span class="badge bg-success">Đã sync</span>
+        {% elif order.sync_status == 'failed' %}
+        <span class="badge bg-danger">Lỗi</span>
+        {% else %}
+        <span class="badge bg-warning text-dark"
+          >{{ order.sync_status|capitalize }}</span
+        >
+        {% endif %} {% if order.sync_error %}
+        <div class="text-danger">{{ order.sync_error }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+      <a
+        href="{{ url_for('ecommerce.orders') }}"
+        class="btn btn-sm btn-outline-secondary"
+      >
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+      </a>
+      {% if order.stock_out %}
+      <a
+        href="{{ url_for('stock_out.detail', id=order.stock_out.id) }}"
+        class="btn btn-sm btn-primary"
+      >
+        <i class="fas fa-truck me-1"></i>Phiếu xuất: {{ order.stock_out.code }}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <div class="small text-muted">Tổng tiền</div>
+        <div class="fw-semibold fs-5">{{ order.total_amount|currency }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="small text-muted">Tạm tính</div>
+        <div class="fw-semibold">{{ order.subtotal|currency }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="small text-muted">Giảm giá</div>
+        <div class="fw-semibold">{{ order.discount_amount|currency }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="small text-muted">Ship + VAT</div>
+        <div class="fw-semibold">
+          {{ (order.shipping_fee + order.vat_amount)|currency }}
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-erp table-hover" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Mã SP</th>
+            <th>Tên SP</th>
+            <th class="text-end">SL</th>
+            <th class="text-end">Đơn giá</th>
+            <th class="text-end">Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td class="fw-semibold">
+              {{ it.product.code if it.product else '' }}
+            </td>
+            <td>
+              <div>
+                {{ it.product_name_snapshot or (it.product.name if it.product
+                else '') }}
+              </div>
+              {# listing.slug optional #}
+            </td>
+            <td class="text-end">{{ it.quantity|qty_vn(0) }}</td>
+            <td class="text-end">{{ it.unit_price|currency }}</td>
+            <td class="text-end fw-semibold">{{ it.amount|currency }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+              Chưa có dòng hàng
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

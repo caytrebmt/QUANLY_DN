@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Sổ cái {{ account_code }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="fas fa-book me-2"></i>SỔ CÁI TÀI KHOẢN {{ account_code }}{% if account %} - {{ account.name }}{% endif %}
+    </h5>
+    <a
+      href="{{ url_for('accounting.export_general_ledger', account_code=account_code, start=start_date|dateformat('%Y-%m-%d'), end=end_date|dateformat('%Y-%m-%d')) }}"
+      class="btn btn-sm btn-success"
+    >
+      <i class="fas fa-file-excel me-1"></i>Xuất Excel
+    </a>
+  </div>
+  <div class="card-body">
+    <form class="row g-2 mb-3" method="get">
+      <div class="col-md-3">
+        <label class="form-label">Từ ngày</label>
+        <input type="date" name="start" class="form-control" value="{{ start_date|dateformat('%Y-%m-%d') }}" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Đến ngày</label>
+        <input type="date" name="end" class="form-control" value="{{ end_date|dateformat('%Y-%m-%d') }}" />
+      </div>
+      <div class="col-md-2 align-self-end">
+        <button class="btn btn-primary w-100" type="submit">Xem</button>
+      </div>
+    </form>
+
+    <div class="alert alert-light border py-2">
+      <strong>Số dư đầu kỳ:</strong>
+      {% if opening_debit and opening_debit > 0 %}
+        <span class="text-primary fw-bold">{{ opening_debit|currency }} (Nợ)</span>
+      {% elif opening_credit and opening_credit > 0 %}
+        <span class="text-danger fw-bold">{{ opening_credit|currency }} (Có)</span>
+      {% else %}
+        <span>0</span>
+      {% endif %}
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-erp table-bordered table-sm table-hover" data-advanced-table="light">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 110px">Ngày</th>
+            <th style="width: 135px">Chứng từ</th>
+            <th>Diễn giải</th>
+            <th class="text-end" style="width: 125px">Nợ</th>
+            <th class="text-end" style="width: 125px">Có</th>
+            <th class="text-end" style="width: 125px">Dư Nợ</th>
+            <th class="text-end" style="width: 125px">Dư Có</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in lines %}
+          <tr>
+            <td>{{ line.date|dateformat }}</td>
+            <td>{{ line.entry_code or '' }}</td>
+            <td>{{ line.description or '' }}</td>
+            <td class="text-end">{{ line.debit|currency if line.debit else '' }}</td>
+            <td class="text-end">{{ line.credit|currency if line.credit else '' }}</td>
+            <td class="text-end fw-bold text-primary">{{ line.running_debit_balance|currency if line.running_debit_balance else '' }}</td>
+            <td class="text-end fw-bold text-danger">{{ line.running_credit_balance|currency if line.running_credit_balance else '' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center text-muted">Không có phát sinh</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light">
+          <tr>
+            <th colspan="5" class="text-end">Số dư cuối kỳ</th>
+            <th colspan="2" class="text-end">
+              {% if closing_debit and closing_debit > 0 %}
+                <span class="text-primary">{{ closing_debit|currency }} (Nợ)</span>
+              {% elif closing_credit and closing_credit > 0 %}
+                <span class="text-danger">{{ closing_credit|currency }} (Có)</span>
+              {% else %}
+                <span>0</span>
+              {% endif %}
+            </th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

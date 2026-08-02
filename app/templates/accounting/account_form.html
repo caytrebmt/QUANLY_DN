@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if account else 'Thêm' }} tài khoản{% endblock %}
+{% block page_title %}<i class="fas fa-plus-square me-2"></i>{{ 'Sửa: ' + account.code if account else 'Thêm tài khoản mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+  <div class="card">
+    <div class="card-header">Thông tin tài khoản kế toán</div>
+    <form method="POST">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Số hiệu TK <span class="text-danger">*</span></label>
+            <input type="text" name="code" class="form-control"
+                   value="{{ account.code if account else '' }}"
+                   {% if account %}readonly{% endif %} required placeholder="VD: 111, 131, 511">
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Tên tài khoản <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control"
+                   value="{{ account.name if account else '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Tên tiếng Anh</label>
+            <input type="text" name="name_en" class="form-control"
+                   value="{{ account.name_en if account else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Loại tài khoản</label>
+            <select name="account_type" class="form-select">
+              {% for k,v in [('asset','Tài sản'),('liability','Nợ phải trả'),('equity','Vốn CSH'),('revenue','Doanh thu'),('expense','Chi phí'),('cogs','Giá vốn')] %}
+              <option value="{{ k }}" {{ 'selected' if account and account.account_type==k }}>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Số dư thông thường</label>
+            <select name="normal_balance" class="form-select">
+              <option value="debit" {{ 'selected' if account and account.normal_balance=='debit' else ('selected' if not account else '') }}>Nợ (Debit)</option>
+              <option value="credit" {{ 'selected' if account and account.normal_balance=='credit' }}>Có (Credit)</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Tài khoản cha</label>
+            <select name="parent_id" class="form-select select2">
+              <option value="">-- Không có --</option>
+              {% for a in all_accounts %}
+              <option value="{{ a.id }}" {{ 'selected' if account and account.parent_id==a.id }}>
+                {{ a.code }} - {{ a.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Cấp TK</label>
+            <input type="number" name="level" class="form-control"
+                   value="{{ account.level if account else 1 }}" min="1" max="5">
+          </div>
+          <div class="col-md-3 d-flex align-items-end gap-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="is_detail"
+                     {{ 'checked' if (not account or account.is_detail) }}>
+              <label class="form-check-label small">TK chi tiết</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Mô tả</label>
+            <textarea name="description" class="form-control" rows="2">{{ account.description if account else '' }}</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-content-between">
+        <a href="{{ url_for('accounting.accounts') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if account else 'Lưu tài khoản' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div></div>
+{% endblock %}
+{% block extra_js %}
+<script>$(function(){ $('.select2').select2({theme:'bootstrap-5',width:'100%'}); });</script>
+{% endblock %}

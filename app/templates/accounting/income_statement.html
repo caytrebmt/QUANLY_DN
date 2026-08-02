@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Báo cáo KQKD{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>BÁO CÁO KẾT QUẢ KINH DOANH</h5>
+    <a
+      href="{{ url_for('accounting.export_income_statement', start=start_date|dateformat('%Y-%m-%d'), end=end_date|dateformat('%Y-%m-%d')) }}"
+      class="btn btn-sm btn-success"
+    >
+      <i class="fas fa-file-excel me-1"></i>Xuất Excel
+    </a>
+  </div>
+  <div class="card-body">
+    <form class="row g-2 mb-3" method="get">
+      <div class="col-md-3">
+        <label class="form-label">Từ ngày</label>
+        <input type="date" name="start" class="form-control" value="{{ start_date|dateformat('%Y-%m-%d') }}" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Đến ngày</label>
+        <input type="date" name="end" class="form-control" value="{{ end_date|dateformat('%Y-%m-%d') }}" />
+      </div>
+      <div class="col-md-2 align-self-end">
+        <button class="btn btn-primary w-100" type="submit">Xem</button>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 120px">Mã số</th>
+            <th>Chỉ tiêu</th>
+            <th class="text-end" style="width: 220px">Số tiền (VND)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in data %}
+          <tr class="{{ 'table-secondary fw-bold' if item.ma_so in ['01','10','20','30','40','50','60'] else '' }}">
+            <td>{{ item.ma_so }}</td>
+            <td>{{ item.chi_tieu }}</td>
+            <td class="text-end">{{ item.so_tien|currency }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="text-center text-muted">Không có dữ liệu</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

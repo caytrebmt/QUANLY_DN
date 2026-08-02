@@ -1,0 +1,210 @@
+# Vietnamese translations for ERPACC.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the ERPACC project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ERPACC\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-22 00:00+0700\n"
+"PO-Revision-Date: 2026-07-22 00:00+0700\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: vi\n"
+"Language-Team: vi <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "Accepted"
+msgstr "Đã chấp nhận"
+
+msgid "Actions"
+msgstr "Thao tác"
+
+msgid "All customers"
+msgstr "-- Tất cả KH --"
+
+msgid "All status"
+msgstr "-- Tất cả TT --"
+
+msgid "All suppliers"
+msgstr "-- Tất cả NCC --"
+
+msgid "Back"
+msgstr "Quay lại"
+
+msgid "Backup / Restore DB"
+msgstr "Sao lưu/Khôi phục DB"
+
+msgid "Cancel"
+msgstr "Hủy"
+
+msgid "Cancelled"
+msgstr "Đã hủy"
+
+msgid "Cancelled stock-in %(code)s."
+msgstr "Hủy nhập hàng %(code)s."
+
+msgid "Cancelled stock-out %(code)s."
+msgstr "Đã hủy phiếu xuất %(code)s."
+
+msgid "Code"
+msgstr "Số phiếu"
+
+msgid "Confirmed"
+msgstr "Đã xác nhận"
+
+msgid "Confirmed stock-in %(code)s. Inventory updated."
+msgstr "Đã xác nhận còn hàng %(code)s. Tồn kho đã cập nhật."
+
+msgid "Confirmed stock-out %(code)s successfully!"
+msgstr "Xác nhận phiếu xuất %(code)s thành công!"
+
+msgid "Converted"
+msgstr "Đã chuyển đổi"
+
+msgid "Create"
+msgstr "Tạo phiếu"
+
+msgid "Created stock-in %(code)s successfully!"
+msgstr "Tạo kho hàng %(code)s thành công!"
+
+msgid "Created stock-out %(code)s successfully!"
+msgstr "Tạo phiếu xuất %(code)s thành công!"
+
+msgid "Customer"
+msgstr "Khách hàng"
+
+msgid "Customer tax code"
+msgstr "MST Khách hàng"
+
+msgid "Dashboard"
+msgstr "Tổng quan"
+
+msgid "Date"
+msgstr "Ngày"
+
+msgid "Display name"
+msgstr "Tên hiển thị"
+
+msgid "Draft"
+msgstr "Bản nháp"
+
+msgid "Edit"
+msgstr "Sửa"
+
+msgid "English"
+msgstr "Tiếng Anh"
+
+msgid "Error cancelling"
+msgstr "Lỗi hủy phiếu"
+
+msgid "Error confirming"
+msgstr "Lỗi xác nhận"
+
+msgid "Error: %(err)s"
+msgstr "Lỗi: %(err)s"
+
+msgid "Export Excel"
+msgstr "Xuất Excel"
+
+msgid "Filter code or invoice"
+msgstr "Số phiếu, số HĐ..."
+
+msgid "From date"
+msgstr "Từ ngày"
+
+msgid "General settings"
+msgstr "Cài đặt chung"
+
+msgid "Invoice no."
+msgstr "Số HĐ"
+
+msgid "Menu code"
+msgstr "Mã thực đơn"
+
+msgid "Menu settings"
+msgstr "Cài đặt menu"
+
+msgid "Notification templates"
+msgstr "Mẫu thông báo"
+
+msgid "Open"
+msgstr "Mở"
+
+msgid "Paid"
+msgstr "Đã thanh toán"
+
+msgid "Partial"
+msgstr "Một phần"
+
+msgid "Please add at least one valid item!"
+msgstr "Vui lòng thêm ít nhất một hàng hóa hợp lệ!"
+
+msgid "Please select warehouse!"
+msgstr "Vui lòng chọn kho xuất!"
+
+msgid "Print PDF"
+msgstr "In PDF"
+
+msgid "Status"
+msgstr "Trạng thái"
+
+msgid "Stock-in detail"
+msgstr "Chi tiết phiếu nhập kho"
+
+msgid "Stock-in list"
+msgstr "Danh sách phiếu nhập"
+
+msgid "Stock-out detail"
+msgstr "Chi tiết phiếu xuất kho"
+
+msgid "Stock-out list"
+msgstr "Danh sách phiếu xuất"
+
+msgid "Subtotal"
+msgstr "Tiền hàng"
+
+msgid "Supplier"
+msgstr "Nhà cung cấp"
+
+msgid "Supplier invoice no."
+msgstr "Số HĐ NCC"
+
+msgid "To date"
+msgstr "Đến ngày"
+
+msgid "Total"
+msgstr "Tổng cộng"
+
+msgid "VAT"
+msgstr "Thuế VAT"
+
+msgid "Voucher has no item, cannot confirm!"
+msgstr "Phiếu chưa có dòng hàng, không thể xác nhận!"
+
+msgid "Warehouse"
+msgstr "Kho"
+
+msgid "This voucher was already confirmed!"
+msgstr "Phiếu đã được xác nhận trước đó!"
+
+msgid "Posting failed: %(err)s"
+msgstr "Đăng không thành công: %(err)s"
+
+msgid "Updated stock-in %(code)s successfully!"
+msgstr "Cập nhật tồn kho %(code)s thành công!"
+
+msgid "Updated stock-out %(code)s successfully!"
+msgstr "Cập nhật phiếu xuất %(code)s thành công!"
+
+msgid "Reverse entry failed: %(err)s"
+msgstr "Lỗi đảo bút toán: %(err)s"
+
+msgid "Users management"
+msgstr "Quản lý người dùng"
+
+msgid "Source"
+msgstr "Nguồn"

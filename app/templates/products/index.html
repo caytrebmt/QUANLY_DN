@@ -1,0 +1,252 @@
+{% extends "base.html" %} {% block title %}Hàng hóa{% endblock %} {% block
+page_title %}<i class="fas fa-box me-2"></i>Quản lý hàng hóa{% endblock %} {%
+block content %}
+<div class="card">
+  <div
+    class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2"
+  >
+    <span>Danh mục hàng hóa</span>
+    
+    <div class="d-flex gap-2 flex-wrap">
+      <a
+        href="{{ url_for('products.download_template') }}"
+        class="btn btn-sm btn-outline-secondary"
+      >
+        <i class="fas fa-download me-1"></i>Mẫu import
+      </a>
+      <button
+        class="btn btn-sm btn-outline-info"
+        data-bs-toggle="modal"
+        data-bs-target="#importModal"
+      >
+        <i class="fas fa-file-excel me-1"></i>Import Excel
+      </button>
+      <a
+        href="{{ url_for('products.export_excel') }}"
+        class="btn btn-sm btn-outline-success"
+      >
+        <i class="fas fa-file-excel me-1"></i>Xuất Excel
+      </a>
+      <a href="{{ url_for('products.create') }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-plus me-1"></i>Thêm hàng hóa
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-5">
+        <input
+          type="text"
+          name="search"
+          value="{{ search }}"
+          class="form-control form-control-sm"
+          placeholder="Tìm theo mã, tên, mã vạch..."
+        />
+      </div>
+      <div class="col-md-3"> 
+        <select name="category" class="form-select form-select-sm" data-auto-submit> 
+          <option value="">-- Tất cả nhóm --</option> 
+          {% for cat in categories %} 
+          <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>
+          {{ cat }}
+          </option> 
+          {% endfor %} 
+        </select> 
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="fas fa-search me-1"></i>Tìm
+        </button>
+        <a
+          href="{{ url_for('products.index') }}"
+          class="btn btn-sm btn-outline-secondary ms-1"
+          >Reset</a
+        >
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <!--<th>Mã hàng</th>-->
+            <th>Tên hàng</th>
+            <th>ĐVT</th>
+            <th>Nhóm</th>
+            {% if current_user.role == 'admin' %}
+            <th class="text-end">Giá mua</th>
+            {% endif %}
+            <th class="text-end">Giá bán</th>
+            <th class="text-end">Giá Web</th>
+            <th class="text-center">VAT%</th>
+            <th class="text-end">Tồn kho</th>
+            <th class="text-center">TT</th>
+            <th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for p in products.items %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+
+                            {% set img_src = p.main_image %}
+                            {# Tạo một biến để kiểm tra xem có phải ảnh trống hay không #}
+                            {% set is_no_image = false %}
+
+                            {% if img_src %}
+                                {% if img_src.startswith('uploads/') %}
+                                    {% set img_src = '/static/' ~ img_src %}
+                                {% endif %}
+                            {% else %}
+                                {% set img_src = url_for('static', filename='image/no-image.png') %}
+                                {% set is_no_image = true %}
+                            {% endif %}
+
+                            <img
+                                src="{{ img_src }}"
+                                width="32"
+                                height="32"
+                                {# Nếu không phải no-image thì mới thêm class erp-zoomable-img, ngược lại thì không thêm #}
+                                class="rounded border me-2 {% if not is_no_image %}erp-zoomable-img{% endif %}"
+                                style="width:32px;height:32px;object-fit:cover;">
+                            
+                            <span>{{ p.name }}</span>
+
+                        </div>
+                    </td>
+           <!-- <td><code>{{ p.code }}</code></td> 
+            <td>{{ p.name }}</td>-->
+            <td>{{ p.unit }}</td>
+            <td>
+              <span class="badge bg-secondary">{{ p.category or '-' }}</span>
+            </td>
+            {% if current_user.role == 'admin' %}
+            <td class="text-end">{{ p.purchase_price|currency }}</td>
+            {% endif %}
+            <td class="text-end">{{ p.sale_price|currency }}</td>
+            <td class="text-end">{{ p.retail_price|currency }}</td>
+            <td class="text-center">
+              <span class="badge bg-info">{{ p.vat_rate|number(0) }}%</span>
+            </td>
+            <td
+              class="text-end fw-bold {% if p.get_current_stock() <= p.min_stock|float and p.min_stock|float > 0 %} text-danger{% endif %}"
+            >
+               {{ p.get_current_stock()|qty_vn(0) }}
+            </td>
+            <td class="text-center">
+              {% if p.is_active %}<span class="badge bg-success"
+                >Hoạt động</span
+              >
+              {% else %}<span class="badge bg-secondary">Ngừng</span>{% endif %}
+            </td>
+            <td class="text-center no-print">
+              <a
+                href="{{ url_for('products.edit', id=p.id) }}"
+                class="btn btn-xs btn-outline-primary btn-sm py-0 px-2"
+              >
+                <i class="fas fa-edit"></i>
+              </a>
+              <form
+                method="POST"
+                action="{{ url_for('products.delete', id=p.id) }}"
+                class="d-inline"
+                onsubmit="return confirm('Xóa hàng hóa {{ p.code }}?')"
+              >
+                <button class="btn btn-xs btn-outline-danger btn-sm py-0 px-2">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="10" class="text-center text-muted py-4">
+              Không có dữ liệu
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination -->
+    {% if products.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted"
+        >Hiển thị {{ products.items|length }} / {{ products.total }} bản ghi</small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% for page in products.iter_pages(left_edge=1, right_edge=1,
+          left_current=2, right_current=2) %} {% if page %}
+          <li class="page-item {% if page == products.page %}active{% endif %}">
+            <a
+              class="page-link"
+              href="{{ url_for('products.index', page=page, search=search, category=category) }}"
+              >{{ page }}</a
+            >
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %} {% endfor %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-file-excel me-2"></i>Import hàng hóa từ Excel
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <form
+        method="POST"
+        action="{{ url_for('products.import_excel') }}"
+        enctype="multipart/form-data"
+      >
+        <div class="modal-body">
+          <div class="alert alert-info small">
+            <i class="fas fa-info-circle me-1"></i>
+            Tải
+            <a href="{{ url_for('products.download_template') }}">file mẫu</a>
+            để biết định dạng đúng.
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Chọn file Excel (.xlsx, .xls)</label>
+            <input
+              type="file"
+              name="file"
+              class="form-control"
+              accept=".xlsx,.xls"
+              required
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Hủy
+          </button>
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-upload me-1"></i>Import
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

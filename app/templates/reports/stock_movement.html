@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}Sổ nhập xuất tồn{% endblock %}
+{% block page_title %}<i class="fas fa-exchange-alt me-2"></i>Bảng theo dõi xuất nhập tồn{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Bảng tổng hợp xuất nhập tồn kho</span>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('reports.export_stock_movement', from_date=from_date, to_date=to_date, warehouse_id=warehouse_id, category=category) }}"
+         class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>Xuất Excel
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-2"><label class="form-label small">Từ ngày</label>
+        <input type="date" name="from_date" value="{{ from_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2"><label class="form-label small">Đến ngày</label>
+        <input type="date" name="to_date" value="{{ to_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2"><label class="form-label small">Kho</label>
+        <select name="warehouse_id" class="form-select form-select-sm">
+          <option value="">-- Tất cả kho --</option>
+          {% for w in warehouses %}
+          <option value="{{ w.id }}" {{ 'selected' if warehouse_id and warehouse_id==w.id|string }}>{{ w.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label small">Nhóm hàng</label>
+        <select name="category" class="form-select form-select-sm">
+          <option value="">-- Tất cả nhóm --</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}" {{ 'selected' if category==cat }}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label small">Hàng hóa</label>
+        <select name="product_id" class="form-select form-select-sm select2">
+          <option value="">-- Tất cả HH --</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {{ 'selected' if product_id and product_id==p.id|string }}>{{ p.code }} - {{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto d-flex align-items-end">
+        <button type="submit" class="btn btn-sm btn-primary me-1"><i class="fas fa-search me-1"></i>Xem</button>
+        <a href="{{ url_for('reports.stock_movement') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  {# ── Info bar ── #}
+  <div class="card-body pt-0 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <small class="text-muted">
+      <i class="fas fa-box me-1"></i>
+      Tổng <strong>{{ total }}</strong> mặt hàng &mdash;
+      Trang <strong>{{ page }}</strong> / <strong>{{ total_pages }}</strong>
+      ({{ per_page }} dòng/trang)
+    </small>
+    {# ── Pagination controls (top) ── #}
+    {% if total_pages > 1 %}
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item {{ 'disabled' if page <= 1 }}">
+          <a class="page-link" href="{{ url_for('reports.stock_movement',
+              from_date=from_date, to_date=to_date,
+              warehouse_id=warehouse_id, category=category, product_id=product_id,
+              page=page-1) }}">
+            <i class="fas fa-chevron-left"></i>
+          </a>
+        </li>
+        {% set start_p = [page - 2, 1]|max %}
+        {% set end_p   = [page + 2, total_pages]|min %}
+        {% if start_p > 1 %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('reports.stock_movement',
+                from_date=from_date, to_date=to_date,
+                warehouse_id=warehouse_id, category=category, product_id=product_id,
+                page=1) }}">1</a>
+          </li>
+          {% if start_p > 2 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endif %}
+        {% for p in range(start_p, end_p + 1) %}
+        <li class="page-item {{ 'active' if p == page }}">
+          <a class="page-link" href="{{ url_for('reports.stock_movement',
+              from_date=from_date, to_date=to_date,
+              warehouse_id=warehouse_id, category=category, product_id=product_id,
+              page=p) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        {% if end_p < total_pages %}
+          {% if end_p < total_pages - 1 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('reports.stock_movement',
+                from_date=from_date, to_date=to_date,
+                warehouse_id=warehouse_id, category=category, product_id=product_id,
+                page=total_pages) }}">{{ total_pages }}</a>
+          </li>
+        {% endif %}
+        <li class="page-item {{ 'disabled' if page >= total_pages }}">
+          <a class="page-link" href="{{ url_for('reports.stock_movement',
+              from_date=from_date, to_date=to_date,
+              warehouse_id=warehouse_id, category=category, product_id=product_id,
+              page=page+1) }}">
+            <i class="fas fa-chevron-right"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" id="stockTable" data-advanced-table="light">
+        <thead>
+          <tr>
+            <!--<th rowspan="2" class="align-middle">Mã hàng</th>-->
+            <th rowspan="2" class="align-middle">Tên hàng hóa</th>
+            <th rowspan="2" class="align-middle text-center">ĐVT</th>
+            <th colspan="2" class="text-center" style="background:linear-gradient(315deg, #2C7ABF, #1A5EAF)">Tồn đầu kỳ</th>
+            <th colspan="2" class="text-center" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">Nhập trong kỳ</th>
+            <th colspan="2" class="text-center" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">Xuất trong kỳ</th>
+            <th colspan="2" class="text-center" style="background:linear-gradient(135deg,#065f46,#10b981)">Tồn cuối kỳ</th>
+          </tr>
+          <tr>
+            <th class="text-end" style="background:linear-gradient(315deg, #2C7ABF, #1A5EAF)">SL</th><th class="text-end" style="background:linear-gradient(315deg, #2C7ABF, #1A5EAF)">Giá trị</th>
+            <th class="text-end" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">SL</th><th class="text-end" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">Thành tiền</th>
+            <th class="text-end" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">SL</th><th class="text-end" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">Thành tiền</th>
+            <th class="text-end" style="background:linear-gradient(135deg,#065f46,#10b981)">SL</th><th class="text-end" style="background:linear-gradient(135deg,#065f46,#10b981)">Giá trị</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          {% set is_low = r.closing_qty <= r.product.min_stock|float and r.product.min_stock|float > 0 %}
+          <tr class="{{ 'table-danger' if is_low else '' }}">
+            <!--<td><code>{{ r.product.code }}</code></td>-->
+            <td>{{ r.product.name }}</td>
+            <td class="text-center">{{ r.product.get_unit_name() }}</td>
+            <!-- Tồn đầu -->
+            <td class="text-end">{{ r.opening_qty_text }}</td>
+            <td class="text-end text-muted">{{ (r.opening_qty * r.avg_cost)|round(0)|int|currency if r.opening_qty > 0 else '-' }}</td>
+            <!-- Nhập kỳ -->
+            <td class="text-end text-success fw-bold">{{ r.in_qty_text if r.in_qty else '-' }}</td>
+            <td class="text-end text-success">{{ r.in_amt|currency if r.in_amt else '-' }}</td>
+            <!-- Xuất kỳ -->
+            <td class="text-end text-danger fw-bold">{{ r.out_qty_text if r.out_qty else '-' }}</td>
+            <td class="text-end text-danger">{{ r.out_amt|currency if r.out_amt else '-' }}</td>
+            <!-- Tồn cuối -->
+            <td class="text-end fw-bold {{ 'text-danger' if is_low else '' }}">{{ r.closing_qty_text }}</td>
+            <td class="text-end fw-bold">{{ r.closing_val|currency }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="11" class="text-center text-muted py-4">
+            Không có dữ liệu xuất nhập trong kỳ này
+          </td></tr>
+          {% endfor %}
+        </tbody>
+        {# Tổng cộng TOÀN KỲ (mọi trang) #}
+        {% if total > 0 %}
+        <tfoot class="table-dark fw-bold">
+          <tr>
+            <td colspan="2" class="text-end">
+              Tổng cộng toàn kỳ
+              {% if total_pages > 1 %}<small class="fw-normal opacity-75">({{ total }} mặt hàng)</small>{% endif %}:
+            </td>
+            <td class="text-end">{{ totals.opening_qty|round(3) }}</td>
+            <td></td>
+            <td class="text-end">{{ totals.in_qty|round(3) }}</td>
+            <td class="text-end">{{ totals.in_amt|currency }}</td>
+            <td class="text-end">{{ totals.out_qty|round(3) }}</td>
+            <td class="text-end">{{ totals.out_amt|currency }}</td>
+            <td class="text-end">{{ totals.closing_qty|round(3) }}</td>
+            <td class="text-end">{{ totals.closing_val|currency }}</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+
+    {# ── Pagination controls (bottom) ── #}
+    {% if total_pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+      <small class="text-muted">
+        Hiển thị {{ (page - 1) * per_page + 1 }}–{{ [page * per_page, total]|min }} / {{ total }} mặt hàng
+      </small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {{ 'disabled' if page <= 1 }}">
+            <a class="page-link" href="{{ url_for('reports.stock_movement',
+                from_date=from_date, to_date=to_date,
+                warehouse_id=warehouse_id, category=category, product_id=product_id,
+                page=page-1) }}">
+              <i class="fas fa-chevron-left"></i> Trước
+            </a>
+          </li>
+          {% set start_p = [page - 2, 1]|max %}
+          {% set end_p   = [page + 2, total_pages]|min %}
+          {% if start_p > 1 %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('reports.stock_movement',
+                  from_date=from_date, to_date=to_date,
+                  warehouse_id=warehouse_id, category=category, product_id=product_id,
+                  page=1) }}">1</a>
+            </li>
+            {% if start_p > 2 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+          {% endif %}
+          {% for p in range(start_p, end_p + 1) %}
+          <li class="page-item {{ 'active' if p == page }}">
+            <a class="page-link" href="{{ url_for('reports.stock_movement',
+                from_date=from_date, to_date=to_date,
+                warehouse_id=warehouse_id, category=category, product_id=product_id,
+                page=p) }}">{{ p }}</a>
+          </li>
+          {% endfor %}
+          {% if end_p < total_pages %}
+            {% if end_p < total_pages - 1 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('reports.stock_movement',
+                  from_date=from_date, to_date=to_date,
+                  warehouse_id=warehouse_id, category=category, product_id=product_id,
+                  page=total_pages) }}">{{ total_pages }}</a>
+            </li>
+          {% endif %}
+          <li class="page-item {{ 'disabled' if page >= total_pages }}">
+            <a class="page-link" href="{{ url_for('reports.stock_movement',
+                from_date=from_date, to_date=to_date,
+                warehouse_id=warehouse_id, category=category, product_id=product_id,
+                page=page+1) }}">
+              Sau <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>$(function(){ $('.select2').select2({theme:'bootstrap-5',width:'100%'}); });</script>
+{% endblock %}

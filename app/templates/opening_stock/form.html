@@ -1,0 +1,282 @@
+{% extends "base.html" %} {% block title %}Nhập tồn đầu kỳ{% endblock %} {%
+block page_title %}<i class="fas fa-boxes me-2"></i>Nhập tồn đầu kỳ{% endblock
+%} {% block content %}
+<form method="POST">
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">Thông tin đợt nhập tồn đầu kỳ</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label fw-semibold"
+                >Ngày đầu kỳ <span class="text-danger">*</span></label
+              >
+              <input
+                type="date"
+                name="period_date"
+                class="form-control"
+                required
+                value="{{ today }}"
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold"
+                >Kho <span class="text-danger">*</span></label
+              >
+              <select name="warehouse_id" class="form-select" required id="warehouseSel">
+                <option value="">-- Chọn kho --</option>
+
+                {% for w in warehouses %}
+                <option value="{{ w.id }}"
+                  {{
+                    'selected'
+                    if (stock_out and stock_out.warehouse_id == w.id)
+                    or (not stock_out and loop.first)
+                  }}>
+                  {{ w.code }} - {{ w.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <div class="alert alert-info mb-0 small">
+                <i class="fas fa-info-circle me-1"></i>
+                Nhập tồn đầu kỳ để thiết lập số dư ban đầu. Sau khi nhập, nhấn
+                <strong>"Cập nhật vào kho"</strong> để áp dụng. Cho phép
+                <strong>xuất hàng âm kho</strong> trước khi nhập đầu kỳ (cấu
+                hình theo từng sản phẩm).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <span
+            ><i class="fas fa-list me-2"></i>Danh sách hàng hóa tồn đầu kỳ</span
+          >
+          <button type="button" class="btn btn-sm btn-success" id="addRowBtn">
+            <i class="fas fa-plus me-1"></i>Thêm dòng
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th width="40">STT</th>
+                  <th width="220">
+                    Hàng hóa (chọn) <span class="text-danger">*</span>
+                  </th>
+                  <th width="220">Tên hàng (tự tạo SKU nếu chưa có)</th>
+                  <th width="70">ĐVT</th>
+                  <th width="130">Số lượng tồn</th>
+                  <th width="150">Giá vốn bình quân</th>
+                  <th width="150">Giá trị tồn</th>
+                  <th width="200">Ghi chú</th>
+                  <th width="40"></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody"></tbody>
+              <tfoot class="table-light fw-bold">
+                <tr>
+                  <td colspan="3" class="text-end">Tổng giá trị:</td>
+                  <td><span id="totalQty">0</span></td>
+                  <td></td>
+                  <td><span id="totalValue">0</span></td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-between">
+      <a
+        href="{{ url_for('opening_stock.index') }}"
+        class="btn btn-outline-secondary"
+      >
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+      </a>
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-save me-1"></i>Lưu tồn đầu kỳ
+      </button>
+    </div>
+  </div>
+</form>
+
+<template id="rowTemplate">
+  <tr class="item-row">
+    <td class="row-num text-center text-muted">-</td>
+    <td>
+      <select
+        name="product_id[]"
+        class="form-select form-select-sm product-sel"
+        required
+      >
+        <option value="">
+          -- Chọn hàng hóa (hoặc nhập tên ở cột bên cạnh) --
+        </option>
+        {% for p in products %}
+        <option
+          value="{{ p.id }}"
+          data-unit="{{ p.get_unit_name() }}"
+          data-cost="{{ p.purchase_price|float|int }}"
+        >
+          {{ p.code }} - {{ p.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </td>
+    <td>
+      <input
+        type="text"
+        name="product_name[]"
+        class="form-control form-control-sm name-input"
+        placeholder="Tên hàng (tự tạo SKU nếu chưa có)"
+      />
+    </td>
+    <td>
+      <input
+        type="text"
+        class="form-control form-control-sm unit-txt"
+        readonly
+        placeholder="-"
+      />
+    </td>
+    <td>
+      <input
+        type="number"
+        name="quantity[]"
+        class="form-control form-control-sm qty-input"
+        value="0"
+        step="0.001"
+        min="0"
+        required
+      />
+    </td>
+    <td>
+      <input
+        type="number"
+        name="unit_cost[]"
+        class="form-control form-control-sm cost-input"
+        value="0"
+        step="1"
+        min="0"
+      />
+    </td>
+    <td>
+      <input
+        type="text"
+        class="form-control form-control-sm value-txt text-end fw-bold bg-light"
+        readonly
+        value="0"
+      />
+    </td>
+    <td>
+      <input
+        type="text"
+        name="note[]"
+        class="form-control form-control-sm"
+        placeholder="Ghi chú..."
+      />
+    </td>
+    <td>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger remove-row py-0"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </td>
+  </tr>
+</template>
+{% endblock %} {% block extra_js %}
+<script>
+  $(function () {
+    function calcRow(row) {
+      const qty = parseFloat($(row).find(".qty-input").val()) || 0;
+      const cost = parseFloat($(row).find(".cost-input").val()) || 0;
+      const val = qty * cost;
+      $(row)
+        .find(".value-txt")
+        .val(new Intl.NumberFormat("vi-VN").format(Math.round(val)));
+      return { qty, val };
+    }
+
+    function calcTotals() {
+      let tQty = 0,
+        tVal = 0;
+      $("#itemsBody .item-row").each(function () {
+        const r = calcRow(this);
+        tQty += r.qty;
+        tVal += r.val;
+      });
+      const fmt = (v) => new Intl.NumberFormat("vi-VN").format(Math.round(v));
+      $("#totalQty").text(tQty.toFixed(3));
+      $("#totalValue").text(fmt(tVal) + " VND");
+    }
+
+    function renumber() {
+      $("#itemsBody .item-row").each(function (i) {
+        $(this)
+          .find(".row-num")
+          .text(i + 1);
+      });
+    }
+
+    function bindRow(row) {
+      $(row)
+        .find(".product-sel")
+        .on("change", function () {
+          const opt = $(this).find("option:selected");
+          const pid = opt.val();
+          $(row)
+            .find(".unit-txt")
+            .val(opt.data("unit") || "");
+          $(row)
+            .find(".cost-input")
+            .val(opt.data("cost") || 0);
+
+          // Chỉ disable khi chọn sẵn product_id hợp lệ
+          // (pid rỗng thì vẫn cho nhập tên)
+          $(row).find(".name-input").prop("disabled", !!pid);
+
+          calcTotals();
+        });
+      $(row).find(".qty-input, .cost-input").on("input", calcTotals);
+      $(row)
+        .find(".remove-row")
+        .on("click", function () {
+          $(row).remove();
+          renumber();
+          calcTotals();
+        });
+    }
+
+    $("#addRowBtn").on("click", function () {
+      const clone = $(
+        document.getElementById("rowTemplate").content.cloneNode(true),
+      ).find("tr")[0];
+      $("#itemsBody").append(clone);
+      const newRow = $("#itemsBody .item-row").last()[0];
+      bindRow(newRow);
+      renumber();
+      $(newRow)
+        .find(".product-sel")
+        .select2({ theme: "select2", width: "100%" });
+    });
+
+    // Add 3 rows by default
+    for (let i = 0; i < 3; i++) $("#addRowBtn").trigger("click");
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if warehouse else 'Thêm' }} kho{% endblock %}
+{% block page_title %}<i class="fas fa-warehouse me-2"></i>{{ 'Sửa: ' + warehouse.code if warehouse else 'Thêm kho mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-6">
+  <div class="card">
+    <div class="card-header">Thông tin kho hàng</div>
+    <form method="POST">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Mã kho <span class="text-danger">*</span></label>
+            <input type="text" name="code" class="form-control text-uppercase"
+                   value="{{ warehouse.code if warehouse else '' }}"
+                   {% if warehouse %}readonly{% endif %} required>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Tên kho <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" value="{{ warehouse.name if warehouse else '' }}" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Địa chỉ</label>
+            <input type="text" name="address" class="form-control" value="{{ warehouse.address if warehouse else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Thủ kho</label>
+            <input type="text" name="manager" class="form-control" value="{{ warehouse.manager if warehouse else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Điện thoại</label>
+            <input type="text" name="phone" class="form-control" value="{{ warehouse.phone if warehouse else '' }}">
+          </div>
+          {% if warehouse %}
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="is_active"
+                     {{ 'checked' if warehouse.is_active else '' }}>
+              <label class="form-check-label">Đang hoạt động</label>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-content-between">
+        <a href="{{ url_for('warehouses.index') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if warehouse else 'Lưu kho' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div></div>
+{% endblock %}

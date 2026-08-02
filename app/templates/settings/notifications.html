@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}Quản lý thông báo{% endblock %}
+{% block page_title %}<i class="fas fa-bell me-2"></i>Quản lý mẫu thông báo hệ thống{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>
+      Mẫu thông báo — <small class="text-muted">Chỉnh sửa nội dung thông báo mà không cần sửa code</small>
+    </span>
+    <a href="{{ url_for('settings.notifications.create_notification') }}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i>Thêm mẫu thông báo
+    </a>
+  </div>
+
+  <!-- Filter -->
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-4">
+        <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
+               placeholder="Tìm mã, tên, nội dung...">
+      </div>
+      <div class="col-md-2">
+        <select name="module" class="form-select form-select-sm">
+          <option value="">— Tất cả module —</option>
+          {% for m in modules %}
+          <option value="{{ m }}" {{ 'selected' if module == m }}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="ntype" class="form-select form-select-sm">
+          <option value="">— Tất cả loại —</option>
+          <option value="success" {{ 'selected' if ntype=='success' }}>✓ Success</option>
+          <option value="info"    {{ 'selected' if ntype=='info'    }}>ℹ Info</option>
+          <option value="warning" {{ 'selected' if ntype=='warning' }}>⚠ Warning</option>
+          <option value="error"   {{ 'selected' if ntype=='error'   }}>✗ Error</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="fas fa-search me-1"></i>Lọc
+        </button>
+        <a href="{{ url_for('settings.notifications.notifications_list') }}" class="btn btn-sm btn-outline-secondary ms-1">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Mã thông báo</th>
+            <th>Tên</th>
+            <th>Nội dung mẫu <small class="text-muted fw-normal">(hỗ trợ {biến})</small></th>
+            <th class="text-center">Loại</th>
+            <th class="text-center">Module</th>
+            <th class="text-center">Bật/Tắt</th>
+            <th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in notifications %}
+          <tr class="{{ '' if n.is_active else 'opacity-50' }}" id="notif-row-{{ n.id }}">
+            <td>
+              <code class="user-select-all">{{ n.code }}</code>
+            </td>
+            <td class="fw-semibold">{{ n.name }}</td>
+            <td>
+              <span class="text-muted small font-monospace">
+                {{ n.message_template[:90] }}{% if n.message_template|length > 90 %}
+                <span class="text-primary">... <a href="#" class="show-full" data-id="{{ n.id }}">xem đủ</a></span>
+                {% endif %}
+              </span>
+              <!-- Full template (hidden) -->
+              <div class="collapse mt-1 font-monospace small border rounded p-2 bg-light"
+                   id="full-{{ n.id }}">{{ n.message_template }}</div>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-{{
+                'success' if n.noti_type=='success' else
+                'danger'  if n.noti_type=='error'   else
+                'warning text-dark' if n.noti_type=='warning' else
+                'info text-dark'
+              }}">
+                {{ n.noti_type }}
+              </span>
+            </td>
+            <td class="text-center">
+              {% if n.module %}
+                <span class="badge bg-secondary">{{ n.module }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <div class="form-check form-switch d-flex justify-content-center mb-0">
+                <input class="form-check-input toggle-notif" type="checkbox"
+                       data-id="{{ n.id }}"
+                       {{ 'checked' if n.is_active else '' }}>
+              </div>
+            </td>
+            <td class="text-center no-print">
+              <button class="btn btn-sm btn-outline-info py-0 px-2 preview-btn"
+                      data-id="{{ n.id }}" title="Xem trước">
+                <i class="fas fa-eye"></i>
+              </button>
+              <a href="{{ url_for('settings.notifications.edit_notification', id=n.id) }}"
+                 class="btn btn-sm btn-outline-primary py-0 px-2" title="Sửa">
+                <i class="fas fa-edit"></i>
+              </a>
+              <form method="POST"
+                    action="{{ url_for('settings.notifications.delete_notification', id=n.id) }}"
+                    class="d-inline"
+                    onsubmit="return confirm('Xóa mẫu thông báo [{{ n.code }}]?')">
+                <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Xóa">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+              {% if search or module or ntype %}
+                Không tìm thấy mẫu thông báo phù hợp.
+              {% else %}
+                Chưa có mẫu thông báo nào.
+                <a href="{{ url_for('settings.notifications.create_notification') }}">Thêm ngay</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-footer text-muted small">
+    Tổng: {{ notifications|length }} mẫu thông báo
+    · Biến động: <code>{ten_bien}</code> sẽ được thay thế tự động khi hiển thị.
+    Ví dụ: <code>{name}</code>, <code>{code}</code>, <code>{amount}</code>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Xem trước thông báo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="previewContent">
+          <div class="text-center py-3"><i class="fas fa-spinner fa-spin"></i></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle show/hide full template text
+document.querySelectorAll('.show-full').forEach(a => {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    const id = this.dataset.id;
+    const el = document.getElementById(`full-${id}`);
+    el.classList.toggle('show');
+    this.textContent = el.classList.contains('show') ? 'thu gọn' : 'xem đủ';
+  });
+});
+
+// Toggle notification active/inactive
+document.querySelectorAll('.toggle-notif').forEach(chk => {
+  chk.addEventListener('change', function() {
+    fetch(`/settings/notifications/toggle/${this.dataset.id}`, { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok) { this.checked = !this.checked; return; }
+        const row = document.getElementById(`notif-row-${this.dataset.id}`);
+        row.style.opacity = d.is_active ? '1' : '0.5';
+      });
+  });
+});
+
+// Preview notification
+document.querySelectorAll('.preview-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const id = this.dataset.id;
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    document.getElementById('previewContent').innerHTML =
+      '<div class="text-center py-3"><i class="fas fa-spinner fa-spin fa-2x text-muted"></i></div>';
+    modal.show();
+
+    fetch(`/settings/notifications/preview/${id}`)
+      .then(r => r.json())
+      .then(d => {
+        const typeColor = {
+          success: 'success', info: 'info',
+          warning: 'warning', error: 'danger'
+        };
+        const color = typeColor[d.type] || 'secondary';
+        const vars = d.placeholders.map(p =>
+          `<span class="badge bg-secondary me-1">{${p}}</span>`).join('');
+
+        document.getElementById('previewContent').innerHTML = `
+          <div class="mb-3">
+            <small class="text-muted">Mã:</small>
+            <code class="ms-1">${d.code}</code>
+          </div>
+          <div class="mb-3">
+            <small class="text-muted">Template gốc:</small>
+            <div class="border rounded p-2 mt-1 bg-light font-monospace small">${d.template}</div>
+          </div>
+          ${d.placeholders.length ? `<div class="mb-3">
+            <small class="text-muted">Biến cần truyền:</small>
+            <div class="mt-1">${vars}</div>
+          </div>` : ''}
+          <div class="mb-2">
+            <small class="text-muted">Xem trước (với giá trị mẫu):</small>
+          </div>
+          <div class="alert alert-${color} mb-0">
+            <i class="fas fa-${d.type === 'error' ? 'times' : d.type === 'warning' ? 'exclamation' : d.type === 'success' ? 'check' : 'info'}-circle me-2"></i>
+            ${d.preview}
+          </div>`;
+      });
+  });
+});
+</script>
+{% endblock %}

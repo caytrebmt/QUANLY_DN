@@ -1,0 +1,599 @@
+<!-- templates/shop/base.html -->
+<!doctype html>
+<html lang="{{ session.get('lang', 'vi') }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>
+      {% block title %}{{ app_name }}{% endblock %} | Văn phòng phẩm B2B
+    </title>
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- Custom config -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0f3b2c",
+              primaryDark: "#0a2a1f",
+              accent: "#d4a373",
+              accentDark: "#b8834f",
+            },
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+            animation: {
+              "fade-in": "fadeIn 0.3s ease-out",
+              "slide-up": "slideUp 0.3s ease-out",
+            },
+            keyframes: {
+              fadeIn: {
+                "0%": { opacity: "0" },
+                "100%": { opacity: "1" },
+              },
+              slideUp: {
+                "0%": { transform: "translateY(10px)", opacity: "0" },
+                "100%": { transform: "translateY(0)", opacity: "1" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      /* Custom styles */
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .line-clamp-1 {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="bg-gray-50 font-sans antialiased">
+    <!-- Top Bar -->
+    <div class="bg-primary text-white text-xs py-2.5 hidden md:block">
+      <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+        <div class="flex items-center gap-6">
+          <span class="flex items-center gap-1.5"
+            ><i class="fas fa-truck-fast text-accent text-sm"></i> Miễn phí vận
+            chuyển đơn từ 500.000đ</span
+          >
+          <span class="flex items-center gap-1.5"
+            ><i class="fas fa-file-invoice text-accent text-sm"></i> Xuất hóa
+            đơn VAT</span
+          >
+          <span class="flex items-center gap-1.5"
+            ><i class="fas fa-clock text-accent text-sm"></i> Giao hàng 24h nội
+            thành</span
+          >
+        </div>
+        <div class="flex items-center gap-4">
+          {% if is_web_customer() %}
+          <a
+            href="{{ url_for('shop.account') }}"
+            class="hover:text-accent transition"
+            ><i class="fas fa-user"></i> {{ current_user.name.split()[0] if
+            current_user.name else 'Tài khoản' }}</a
+          >
+          <a
+            href="{{ url_for('shop.logout') }}"
+            class="hover:text-accent transition"
+            ><i class="fas fa-sign-out-alt"></i> Đăng xuất</a
+          >
+          {% else %}
+          <a
+            href="{{ url_for('shop.login') }}"
+            class="hover:text-accent transition"
+            ><i class="fas fa-user"></i> Đăng nhập</a
+          >
+          <a
+            href="{{ url_for('shop.register') }}"
+            class="hover:text-accent transition"
+            >Đăng ký</a
+          >
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white sticky top-0 z-40 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between gap-4">
+          <!-- Mobile Menu Button -->
+          <button
+            id="mobileMenuBtn"
+            class="md:hidden w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+          >
+            <i class="fas fa-bars text-xl text-gray-700"></i>
+          </button>
+
+          <!-- Logo -->
+          <a
+            href="{{ url_for('shop.catalog') }}"
+            class="flex-shrink-0 flex items-center gap-2"
+          >
+            <div
+              class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center"
+            >
+              <i class="fas fa-store text-white text-lg"></i>
+            </div>
+            <div class="hidden sm:block">
+              <span class="font-bold text-lg text-gray-800"
+                >{{ app_name }}</span
+              >
+              <span class="text-xs text-gray-500 block -mt-1"
+                >Văn phòng phẩm B2B</span
+              >
+            </div>
+          </a>
+
+          <!-- Search -->
+          <form
+            action="{{ url_for('shop.catalog') }}"
+            method="GET"
+            class="hidden md:block flex-1 max-w-md"
+          >
+            <div class="relative">
+              <input
+                type="text"
+                name="search"
+                placeholder="Tìm kiếm sản phẩm..."
+                value="{{ request.args.get('search', '') }}"
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              />
+              <i
+                class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              ></i>
+              <button
+                type="submit"
+                class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-primary text-white text-sm rounded-lg"
+              >
+                Tìm
+              </button>
+            </div>
+          </form>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2">
+            <button
+              id="mobileSearchBtn"
+              class="md:hidden w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+            >
+              <i class="fas fa-search text-xl text-gray-700"></i>
+            </button>
+            <a
+              href="{{ url_for('shop.account') if is_web_customer() else url_for('shop.login') }}"
+              class="relative w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+            >
+              <i class="far fa-heart text-xl text-gray-700"></i>
+            </a>
+            <a
+              href="{{ url_for('shop.cart') }}"
+              class="relative w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+            >
+              <i class="fas fa-shopping-cart text-xl text-gray-700"></i>
+              <!-- Thêm class cart-count và xử lý ẩn/hiện trực tiếp bằng Tailwind -->
+              <span
+                class="cart-count absolute -top-1 -right-1 min-w-[20px] h-5 bg-accent text-white text-xs font-bold rounded-full flex items-center justify-center px-1 {% if not shop_cart_qty or shop_cart_qty|int == 0 %}hidden{% endif %}"
+              >
+                {{ (shop_cart_qty|int) if shop_cart_qty else 0 }}
+              </span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Mobile Search -->
+        <div id="mobileSearch" class="hidden mt-3 md:hidden">
+          <form
+            action="{{ url_for('shop.catalog') }}"
+            method="GET"
+            class="relative"
+          >
+            <input
+              type="text"
+              name="search"
+              placeholder="Tìm kiếm sản phẩm..."
+              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50"
+            />
+            <i
+              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            ></i>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <!-- Desktop Navigation -->
+    <nav
+      class="hidden md:block bg-white border-b border-gray-100 sticky top-[73px] z-30"
+    >
+      <div class="max-w-7xl mx-auto px-4">
+        <div
+          class="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide"
+        >
+          <a
+            href="{{ url_for('shop.catalog') }}"
+            class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-accent transition whitespace-nowrap"
+            >Trang chủ</a
+          >
+          {% for cat in categories %}
+          <a
+            href="{{ url_for('shop.catalog', category=cat.slug) }}"
+            class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-accent transition whitespace-nowrap"
+            >{{ cat.name }}</a
+          >
+          {% endfor %}
+          <a
+            href="{{ url_for('shop.catalog', tag='khuyen_mai') }}"
+            class="px-4 py-2 text-sm font-medium text-accent transition whitespace-nowrap"
+            >Khuyến mãi</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <!-- Mobile Sidebar -->
+    <div
+      id="mobileMenuOverlay"
+      class="fixed inset-0 bg-black/50 z-50 hidden md:hidden"
+      style="backdrop-filter: blur(4px)"
+    ></div>
+    <div
+      id="mobileMenu"
+      class="fixed top-0 left-0 bottom-0 w-80 bg-white z-50 transform -translate-x-full transition-transform duration-300 ease-out overflow-y-auto"
+    >
+      <div
+        class="p-4 border-b border-gray-100 flex justify-between items-center"
+      >
+        <div class="flex items-center gap-2">
+          <div
+            class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center"
+          >
+            <i class="fas fa-store text-white text-sm"></i>
+          </div>
+          <span class="font-bold">{{ app_name }}</span>
+        </div>
+        <button
+          id="closeMobileMenu"
+          class="w-8 h-8 rounded-lg hover:bg-gray-100"
+        >
+          <i class="fas fa-times text-gray-500"></i>
+        </button>
+      </div>
+
+      {% if is_web_customer() %}
+      <div class="p-4 border-b border-gray-100 flex items-center gap-3">
+        <div
+          class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center"
+        >
+          <i class="fas fa-user text-primary text-xl"></i>
+        </div>
+        <div>
+          <div class="font-semibold">
+            {{ current_user.name or 'Khách hàng' }}
+          </div>
+          <div class="text-xs text-gray-500">{{ current_user.email }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="p-2">
+        <a
+          href="{{ url_for('shop.catalog') }}"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50"
+          ><i class="fas fa-home w-5 text-gray-500"></i
+          ><span>Trang chủ</span></a
+        >
+        <div class="mt-2">
+          <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase">
+            Danh mục
+          </div>
+          {% for cat in categories %}
+          <a
+            href="{{ url_for('shop.catalog', category=cat.slug) }}"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 ml-2"
+            ><i class="fas fa-chevron-right w-4 text-gray-400 text-xs"></i
+            ><span>{{ cat.name }}</span></a
+          >
+          {% endfor %}
+        </div>
+        <div class="border-t border-gray-100 my-2"></div>
+        {% if is_web_customer() %}
+        <a
+          href="{{ url_for('shop.account') }}"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50"
+          ><i class="fas fa-user-circle w-5 text-gray-500"></i
+          ><span>Tài khoản</span></a
+        >
+        <a
+          href="{{ url_for('shop.order_history') }}"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50"
+          ><i class="fas fa-receipt w-5 text-gray-500"></i
+          ><span>Đơn hàng</span></a
+        >
+        <a
+          href="{{ url_for('shop.logout') }}"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 text-red-600"
+          ><i class="fas fa-sign-out-alt w-5"></i><span>Đăng xuất</span></a
+        >
+        {% else %}
+        <a
+          href="{{ url_for('shop.login') }}"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50"
+          ><i class="fas fa-sign-in-alt w-5 text-gray-500"></i
+          ><span>Đăng nhập</span></a
+        >
+        <a
+          href="{{ url_for('shop.register') }}"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50"
+          ><i class="fas fa-user-plus w-5 text-gray-500"></i
+          ><span>Đăng ký</span></a
+        >
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div
+      class="fixed top-20 right-4 left-4 md:left-auto md:right-4 md:w-96 z-50 space-y-2"
+    >
+      {% for category, message in messages %}
+      <div
+        class="flash-msg p-4 rounded-xl shadow-lg animate-fade-in bg-white border-l-4 {% if category == 'success' %}border-green-500{% elif category == 'danger' %}border-red-500{% elif category == 'warning' %}border-yellow-500{% else %}border-blue-500{% endif %}"
+      >
+        <div class="flex items-center gap-3">
+          <i
+            class="fas {% if category == 'success' %}fa-check-circle text-green-500{% elif category == 'danger' %}fa-exclamation-circle text-red-500{% elif category == 'warning' %}fa-exclamation-triangle text-yellow-500{% else %}fa-info-circle text-blue-500{% endif %}"
+          ></i>
+          <span class="text-sm text-gray-700">{{ message }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
+    <!-- Main Content -->
+    <main class="min-h-screen">{% block content %}{% endblock %}</main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 mt-16">
+      <div class="max-w-7xl mx-auto px-4 py-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <div
+                class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center"
+              >
+                <i class="fas fa-store text-white text-lg"></i>
+              </div>
+              <span class="font-bold text-xl text-white">{{ app_name }}</span>
+            </div>
+            <p class="text-sm text-gray-400 mb-4">
+              Chuyên cung cấp văn phòng phẩm và thiết bị văn phòng chính hãng
+              cho doanh nghiệp.
+            </p>
+            <div class="flex gap-3">
+              <a
+                href="#"
+                class="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary transition"
+                ><i class="fab fa-facebook-f text-sm"></i></a
+              ><a
+                href="#"
+                class="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary transition"
+                ><i class="fab fa-instagram text-sm"></i
+              ></a>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-semibold text-white mb-3">Sản phẩm</h4>
+            <ul class="space-y-2 text-sm">
+              <li>
+                <a href="#" class="hover:text-accent transition"
+                  >Văn phòng phẩm</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-accent transition"
+                  >Máy in & Mực</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-accent transition"
+                  >Thiết bị văn phòng</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-white mb-3">Hỗ trợ</h4>
+            <ul class="space-y-2 text-sm">
+              <li>
+                <a href="#" class="hover:text-accent transition"
+                  >Chính sách vận chuyển</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-accent transition"
+                  >Đổi trả hàng</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-accent transition"
+                  >Xuất hóa đơn VAT</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-white mb-3">Liên hệ</h4>
+            <ul class="space-y-2 text-sm">
+              <li class="flex items-center gap-2">
+                <i class="fas fa-phone-alt text-accent w-4"></i
+                ><span>1800 1234</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i class="fas fa-envelope text-accent w-4"></i
+                ><span>sales@vpp.vn</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div
+          class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500"
+        >
+          © 2024 {{ app_name }}. Tất cả các quyền được bảo lưu.
+        </div>
+      </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div
+      id="toastContainer"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+    ></div>
+
+    <script>
+      function getCsrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || "";
+      }
+
+      function showToast(message, type = "success", duration = 3000) {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        const colors = {
+          success: "bg-green-500",
+          error: "bg-red-500",
+          warning: "bg-yellow-500",
+          info: "bg-blue-500",
+        };
+        const icons = {
+          success: "fa-check-circle",
+          error: "fa-exclamation-circle",
+          warning: "fa-exclamation-triangle",
+          info: "fa-info-circle",
+        };
+        toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 ${colors[type]} text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 text-sm font-medium transition-all duration-300 translate-y-0 opacity-100`;
+        toast.innerHTML = `<i class="fas ${icons[type]}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(20px)";
+          setTimeout(() => toast.remove(), 300);
+        }, duration);
+      }
+
+      async function ajaxAddToCart(listingId, quantity, btn) {
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        try {
+          const res = await fetch(`/shop/cart/add/${listingId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify({ quantity: parseFloat(quantity) || 1 }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast(data.message || "Đã thêm vào giỏ hàng", "success");
+            const badge = document.querySelector(".cart-count");
+            if (badge && data.cart_qty !== undefined) {
+              badge.textContent = data.cart_qty;
+              if (parseInt(data.cart_qty) > 0) {
+                badge.classList.remove("hidden"); // Hiện badge lên nếu trước đó giỏ hàng trống
+              } else {
+                badge.classList.add("hidden");
+              }
+            }
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+              btn.innerHTML = originalHtml;
+              btn.disabled = false;
+            }, 1500);
+          } else {
+            showToast(data.message || "Có lỗi", "error");
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+          }
+        } catch {
+          showToast("Không thể kết nối", "error");
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+        }
+      }
+
+      // Mobile menu
+      const mobileMenuBtn = document.getElementById("mobileMenuBtn"),
+        mobileMenu = document.getElementById("mobileMenu"),
+        overlay = document.getElementById("mobileMenuOverlay"),
+        closeBtn = document.getElementById("closeMobileMenu");
+      function openMenu() {
+        mobileMenu.classList.remove("-translate-x-full");
+        overlay.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      }
+      function closeMenu() {
+        mobileMenu.classList.add("-translate-x-full");
+        overlay.classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+      if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", openMenu);
+      if (closeBtn) closeBtn.addEventListener("click", closeMenu);
+      if (overlay) overlay.addEventListener("click", closeMenu);
+
+      const mobileSearchBtn = document.getElementById("mobileSearchBtn"),
+        mobileSearch = document.getElementById("mobileSearch");
+      if (mobileSearchBtn && mobileSearch)
+        mobileSearchBtn.addEventListener("click", () =>
+          mobileSearch.classList.toggle("hidden"),
+        );
+
+      setTimeout(() => {
+        document.querySelectorAll(".flash-msg").forEach((el) => el.remove());
+      }, 4000);
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

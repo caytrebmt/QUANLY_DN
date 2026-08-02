@@ -1,0 +1,412 @@
+<!-- templates/shop/account.html -->
+{% extends "shop/base.html" %}
+
+{% block title %}Tài khoản của tôi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <i class="fas fa-user-circle text-accent"></i> Tài khoản của tôi
+    </h1>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Sidebar -->
+        <div class="lg:w-72">
+            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden sticky top-24">
+                <!-- Profile Summary -->
+                <div class="p-5 text-center border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent">
+                    <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-user text-3xl text-primary"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800">{{ current_user.name or 'Khách hàng' }}</h3>
+                    <p class="text-sm text-gray-500">{{ current_user.email }}</p>
+                    {% if current_user.tier %}
+                    <span class="inline-block mt-2 px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-full">
+                        <i class="fas fa-star mr-1"></i>{{ current_user.tier|title }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-px bg-gray-100">
+                    <div class="bg-white p-3 text-center">
+                        <div class="font-bold text-primary text-lg">{{ order_count|default(0) }}</div>
+                        <div class="text-xs text-gray-500">Đơn hàng</div>
+                    </div>
+                    <div class="bg-white p-3 text-center">
+                        <div class="font-bold text-primary text-lg">{{ wishlist|length if wishlist else 0 }}</div>
+                        <div class="text-xs text-gray-500">Yêu thích</div>
+                    </div>
+                    <div class="bg-white p-3 text-center">
+                        <div class="font-bold text-primary text-lg">{{ addresses|length if addresses else 0 }}</div>
+                        <div class="text-xs text-gray-500">Địa chỉ</div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="divide-y divide-gray-100">
+                    <a href="#" onclick="showSection('orders'); return false;" class="nav-item flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition" data-section="orders">
+                        <i class="fas fa-receipt w-5 text-gray-400"></i>
+                        <span>Đơn hàng của tôi</span>
+                        {% if pending_orders %}<span class="ml-auto text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">{{ pending_orders }}</span>{% endif %}
+                    </a>
+                    <a href="#" onclick="showSection('wishlist'); return false;" class="nav-item flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition" data-section="wishlist">
+                        <i class="fas fa-heart w-5 text-gray-400"></i>
+                        <span>Sản phẩm yêu thích</span>
+                    </a>
+                    <a href="#" onclick="showSection('profile'); return false;" class="nav-item flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition" data-section="profile">
+                        <i class="fas fa-user-edit w-5 text-gray-400"></i>
+                        <span>Thông tin cá nhân</span>
+                    </a>
+                    <a href="#" onclick="showSection('address'); return false;" class="nav-item flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition" data-section="address">
+                        <i class="fas fa-map-marker-alt w-5 text-gray-400"></i>
+                        <span>Địa chỉ giao hàng</span>
+                    </a>
+                    <a href="#" onclick="showSection('security'); return false;" class="nav-item flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition" data-section="security">
+                        <i class="fas fa-shield-alt w-5 text-gray-400"></i>
+                        <span>Bảo mật tài khoản</span>
+                    </a>
+                    <a href="{{ url_for('shop.logout') }}" class="flex items-center gap-3 px-5 py-3 text-red-600 hover:bg-red-50 transition">
+                        <i class="fas fa-sign-out-alt w-5"></i>
+                        <span>Đăng xuất</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1">
+            <!-- Orders Section -->
+            <div id="section-orders" class="section-content">
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center flex-wrap gap-3">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-receipt text-accent"></i> Lịch sử đơn hàng
+                        </h2>
+                        <div class="flex gap-2">
+                            <select id="orderStatusFilter" onchange="filterOrders()" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm">
+                                <option value="">Tất cả</option>
+                                <option value="new">Mới</option>
+                                <option value="processing">Đang xử lý</option>
+                                <option value="shipping">Đang giao</option>
+                                <option value="completed">Hoàn thành</option>
+                                <option value="cancelled">Đã hủy</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {% if orders %}
+                    <div class="divide-y divide-gray-100">
+                        {% for order in orders %}
+                        <div class="order-item p-5 hover:bg-gray-50 transition" data-status="{{ order.status }}">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="font-mono font-bold text-primary">#{{ order.code }}</span>
+                                        <span class="status-badge text-xs px-2 py-0.5 rounded-full
+                                            {% if order.status == 'new' %}bg-blue-100 text-blue-700
+                                            {% elif order.status == 'processing' %}bg-yellow-100 text-yellow-700
+                                            {% elif order.status == 'shipping' %}bg-purple-100 text-purple-700
+                                            {% elif order.status == 'completed' %}bg-green-100 text-green-700
+                                            {% else %}bg-red-100 text-red-700{% endif %}">
+                                            {% if order.status == 'new' %}Mới
+                                            {% elif order.status == 'processing' %}Đang xử lý
+                                            {% elif order.status == 'shipping' %}Đang giao
+                                            {% elif order.status == 'completed' %}Hoàn thành
+                                            {% else %}Đã hủy{% endif %}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '' }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-primary text-lg">{{ order.total_amount|currency }}</div>
+                                    <a href="{{ url_for('shop.order_detail', code=order.code) }}" class="text-sm text-accent hover:underline">Xem chi tiết →</a>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
+                                <i class="fas fa-box"></i>
+                                <span>{{ order.items.count() }} sản phẩm</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-12 text-center">
+                        <i class="fas fa-shopping-bag text-5xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">Chưa có đơn hàng nào</p>
+                        <a href="{{ url_for('shop.catalog') }}" class="inline-block mt-3 px-4 py-2 bg-primary text-white rounded-lg text-sm">Mua sắm ngay</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Wishlist Section -->
+            <div id="section-wishlist" class="section-content hidden">
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-100">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-heart text-accent"></i> Sản phẩm yêu thích
+                        </h2>
+                    </div>
+                    {% if wishlist %}
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 p-5">
+                        {% for listing in wishlist %}
+                        <div class="bg-gray-50 rounded-xl p-3">
+                            <a href="{{ url_for('shop.product_detail', slug=listing.slug) }}">
+                                <img src="{{ listing.image_url or url_for('shop.product_placeholder', code=listing.product.code if listing.product else 'X', name=listing.display_name()) }}" class="w-full aspect-square object-contain bg-white rounded-lg p-2">
+                            </a>
+                            <div class="mt-2">
+                                <a href="{{ url_for('shop.product_detail', slug=listing.slug) }}" class="font-medium text-gray-800 text-sm line-clamp-2 hover:text-accent">
+                                    {{ listing.display_name() }}
+                                </a>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="font-bold text-primary">{{ listing.display_retail_price()|currency }}</span>
+                                    <button onclick="removeFromWishlist({{ listing.id }}, this)" class="text-red-400 hover:text-red-600 transition">
+                                        <i class="fas fa-trash-alt text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-12 text-center">
+                        <i class="fas fa-heart text-5xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">Chưa có sản phẩm yêu thích</p>
+                        <a href="{{ url_for('shop.catalog') }}" class="inline-block mt-3 px-4 py-2 bg-primary text-white rounded-lg text-sm">Khám phá sản phẩm</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Section -->
+            <div id="section-profile" class="section-content hidden">
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-100">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-user-edit text-accent"></i> Thông tin cá nhân
+                        </h2>
+                    </div>
+                    <form method="POST" action="{{ url_for('shop.update_profile') }}" class="p-5">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên</label>
+                                <input type="text" name="name" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" value="{{ current_user.name or '' }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                                <input type="tel" name="phone" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" value="{{ current_user.phone or '' }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50" value="{{ current_user.email or '' }}" disabled>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tên công ty</label>
+                                <input type="text" name="company_name" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" value="{{ current_user.company_name or '' }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mã số thuế</label>
+                                <input type="text" name="tax_code" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" value="{{ current_user.tax_code or '' }}">
+                            </div>
+                        </div>
+                        <div class="mt-5 flex justify-end">
+                            <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primaryDark transition">
+                                <i class="fas fa-save mr-2"></i>Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Address Section -->
+            <div id="section-address" class="section-content hidden">
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt text-accent"></i> Địa chỉ giao hàng
+                        </h2>
+                        <button onclick="showAddAddressModal()" class="px-3 py-1.5 text-sm border border-accent text-accent rounded-lg hover:bg-accent/5 transition">
+                            <i class="fas fa-plus mr-1"></i>Thêm mới
+                        </button>
+                    </div>
+                    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for addr in addresses %}
+                        <div class="border border-gray-200 rounded-xl p-4 {% if addr.is_default %}border-accent bg-accent/5{% endif %}">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <span class="font-medium">{{ addr.recipient_name or current_user.name }}</span>
+                                    {% if addr.is_default %}
+                                    <span class="ml-2 text-xs bg-accent text-white px-2 py-0.5 rounded">Mặc định</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="editAddress({{ addr.id }})" class="text-gray-400 hover:text-accent"><i class="fas fa-edit"></i></button>
+                                    <button onclick="deleteAddress({{ addr.id }})" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600">{{ addr.address }}</p>
+                            <p class="text-sm text-gray-500 mt-1">{{ addr.phone or current_user.phone }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div id="section-security" class="section-content hidden">
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-100">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-shield-alt text-accent"></i> Đổi mật khẩu
+                        </h2>
+                    </div>
+                    <form method="POST" action="{{ url_for('shop.change_password') }}" class="p-5">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="space-y-4 max-w-md">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại</label>
+                                <input type="password" name="current_password" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
+                                <input type="password" name="new_password" id="newPassword" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none">
+                                <div class="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="strengthBar" class="h-full w-0 transition-all duration-300 rounded-full"></div>
+                                </div>
+                                <p id="strengthText" class="text-xs mt-1"></p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
+                                <input type="password" name="confirm_password" id="confirmPassword" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none">
+                                <p id="matchText" class="text-xs mt-1"></p>
+                            </div>
+                        </div>
+                        <div class="mt-5">
+                            <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primaryDark transition">
+                                <i class="fas fa-key mr-2"></i>Đổi mật khẩu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Section switching
+    let currentSection = 'orders';
+    
+    function showSection(section) {
+        document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`section-${section}`)?.classList.remove('hidden');
+        
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove('bg-gray-100', 'text-accent');
+            const elSection = el.getAttribute('data-section');
+            if (elSection === section) {
+                el.classList.add('bg-gray-100', 'text-accent');
+                el.querySelector('i')?.classList.remove('text-gray-400');
+                el.querySelector('i')?.classList.add('text-accent');
+            } else {
+                el.querySelector('i')?.classList.add('text-gray-400');
+                el.querySelector('i')?.classList.remove('text-accent');
+            }
+        });
+        
+        currentSection = section;
+        localStorage.setItem('accountSection', section);
+    }
+    
+    // Restore last section
+    const savedSection = localStorage.getItem('accountSection');
+    if (savedSection && ['orders', 'wishlist', 'profile', 'address', 'security'].includes(savedSection)) {
+        showSection(savedSection);
+    } else {
+        showSection('orders');
+    }
+    
+    // Filter orders
+    function filterOrders() {
+        const status = document.getElementById('orderStatusFilter').value;
+        document.querySelectorAll('.order-item').forEach(item => {
+            if (!status || item.dataset.status === status) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    // Password strength
+    document.getElementById('newPassword')?.addEventListener('input', function() {
+        const pw = this.value;
+        let strength = 0;
+        if (pw.length >= 8) strength++;
+        if (/[A-Z]/.test(pw)) strength++;
+        if (/[0-9]/.test(pw)) strength++;
+        if (/[^a-zA-Z0-9]/.test(pw)) strength++;
+        
+        const bar = document.getElementById('strengthBar');
+        const text = document.getElementById('strengthText');
+        const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+        const labels = ['Yếu', 'Trung bình', 'Khá', 'Mạnh'];
+        
+        bar.style.width = `${strength * 25}%`;
+        bar.className = `h-full transition-all duration-300 rounded-full ${colors[strength - 1] || 'bg-gray-300'}`;
+        text.textContent = strength > 0 ? labels[strength - 1] : '';
+        text.className = `text-xs mt-1 ${strength >= 3 ? 'text-green-600' : strength >= 2 ? 'text-yellow-600' : 'text-gray-500'}`;
+    });
+    
+    // Password match
+    document.getElementById('confirmPassword')?.addEventListener('input', function() {
+        const newPw = document.getElementById('newPassword').value;
+        const confirmPw = this.value;
+        const matchText = document.getElementById('matchText');
+        if (confirmPw) {
+            if (newPw === confirmPw) {
+                matchText.textContent = '✓ Mật khẩu khớp';
+                matchText.className = 'text-xs mt-1 text-green-600';
+            } else {
+                matchText.textContent = '✗ Mật khẩu không khớp';
+                matchText.className = 'text-xs mt-1 text-red-500';
+            }
+        } else {
+            matchText.textContent = '';
+        }
+    });
+    
+    // Wishlist remove
+    async function removeFromWishlist(listingId, btn) {
+        try {
+            const response = await fetch(`/shop/wishlist/toggle/${listingId}`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrf() }
+            });
+            if (response.ok) {
+                btn.closest('.bg-gray-50')?.remove();
+                showToast('Đã xóa khỏi danh sách yêu thích', 'info');
+                if (document.querySelectorAll('#section-wishlist .bg-gray-50').length === 0) {
+                    location.reload();
+                }
+            }
+        } catch (error) {
+            showToast('Có lỗi xảy ra', 'error');
+        }
+    }
+    
+    function showAddAddressModal() {
+        showToast('Tính năng đang phát triển', 'info');
+    }
+    
+    function editAddress(id) {
+        showToast('Tính năng đang phát triển', 'info');
+    }
+    
+    function deleteAddress(id) {
+        showToast('Tính năng đang phát triển', 'info');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "base.html" %} {% block title %}Chi tiết phiếu nhập {{ stock_in.code
+}}{% endblock %} {% block page_title %}<i
+  class="fas fa-arrow-circle-down me-2 text-success"
+></i
+>Phiếu nhập: {{ stock_in.code }}{% endblock %} {% block content %}
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card">
+      <div
+        class="card-header d-flex justify-content-between align-items-center"
+      >
+        <span>{{ t('Stock-in detail') }}</span>
+        <div class="d-flex gap-2">
+          {% if (stock_in.status or '')|lower == 'draft' %}
+          <a
+            href="{{ url_for('stock_in.edit', id=stock_in.id) }}"
+            class="btn btn-sm btn-outline-primary"
+          >
+            <i class="fas fa-edit me-1"></i>{{ t('Edit') }}
+          </a>
+          <form
+            method="POST"
+            action="{{ url_for('stock_in.confirm', id=stock_in.id) }}"
+            class="d-inline"
+            onsubmit="
+              return confirm(
+                'Xác nhận nhập kho? Thao tác này không thể hoàn tác!',
+              );
+            "
+          >
+            <button class="btn btn-sm btn-success">
+              <i class="fas fa-check me-1"></i>{{ t('confirm') }}
+            </button>
+          </form>
+          <form
+            method="POST"
+            action="{{ url_for('stock_in.cancel', id=stock_in.id) }}"
+            class="d-inline"
+            onsubmit="return confirm('Hủy phiếu này?');"
+          >
+            <button class="btn btn-sm btn-outline-danger">
+              <i class="fas fa-times me-1"></i>{{ t('Cancel') }}
+            </button>
+          </form>
+          {% endif %}
+          <button type="button"
+            data-print-url="{{ url_for('stock_in.print_html', id=stock_in.id) }}"
+            class="btn btn-sm btn-outline-secondary btn-erp-print">
+            <i class="fas fa-print me-1"></i>{{ t('Print PDF') }}
+          </button>
+          <a
+            href="{{ url_for('stock_in.index') }}"
+            class="btn btn-sm btn-outline-secondary"
+          >
+            <i class="fas fa-arrow-left me-1"></i>{{ t('Back') }}
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <small class="text-muted">{{ t('Code') }}</small>
+            <div class="fw-bold">{{ stock_in.code }}</div>
+          </div>
+          <div class="col-md-3">
+            <small class="text-muted">{{ t('Date') }}</small>
+            <div class="fw-bold">{{ stock_in.date|dateformat }}</div>
+          </div>
+          <div class="col-md-3">
+            <small class="text-muted">{{ t('Warehouse') }}</small>
+            <div class="fw-bold">
+              {{ stock_in.warehouse.name if stock_in.warehouse else '-' }}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <small class="text-muted">{{ t('Status') }}</small>
+            <div>
+              <span class="badge badge-{{ (stock_in.status or '')|lower }} fs-6">
+                {{ stock_in.status|status_label }}
+              </span>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <small class="text-muted">{{ t('Supplier') }}</small>
+            <div class="fw-bold">
+              {{ stock_in.supplier.name if stock_in.supplier else '-' }}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <small class="text-muted">Số HĐ NCC</small>
+            <div>{{ stock_in.invoice_no or '-' }}</div>
+          </div>
+          <div class="col-md-3">
+            <small class="text-muted">Ngày HĐ NCC</small>
+            <div>
+              {{ stock_in.invoice_date|dateformat if stock_in.invoice_date else
+              '-' }}
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-erp mb-0" data-advanced-table="light">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Mã hàng</th>
+                <th>Tên hàng hóa</th>
+                <th>ĐVT</th>
+                <th class="text-end">Số lượng</th>
+                <th class="text-end">Đơn giá</th>
+                <th class="text-end">Thành tiền</th>
+                <th class="text-center">VAT%</th>
+                <th class="text-end">Tiền VAT</th>
+                <th class="text-end">Tổng cộng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set list_items = items if items is defined else stock_in.items
+              %}
+              {% set qty_map = qty_display_map if qty_display_map is defined else {} %}
+              {% for item in list_items %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                  <code>{{ item.product.code if item.product else '' }}</code>
+                </td>
+                <td>{{ item.product.name if item.product else '' }}</td>
+                <td>
+                  {{ item.unit.name if item.unit else
+                  (item.product.get_unit_name() if item.product else '') }}
+                </td>
+                <td class="text-end">
+                  {{ qty_map.get(item.id, item.quantity|qty_vn) }}
+                </td>
+                <td class="text-end">{{ item.unit_price|currency }}</td>
+                <td class="text-end">{{ item.amount|currency }}</td>
+                <td class="text-center">
+                  <span class="badge bg-info"
+                    >{{ item.vat_rate|number(0) }}%</span
+                  >
+                </td>
+                <td class="text-end text-info">
+                  {{ item.vat_amount|currency }}
+                </td>
+                <td class="text-end fw-bold">
+                  {{ item.total_amount|currency }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light fw-bold">
+              <tr>
+                <td colspan="6" class="text-end">Tổng cộng:</td>
+                <td class="text-end">{{ stock_in.subtotal|currency }}</td>
+                <td></td>
+                <td class="text-end text-info">
+                  {{ stock_in.vat_amount|currency }}
+                </td>
+                <td class="text-end text-primary fs-6">
+                  {{ stock_in.total_amount|currency }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        {% if stock_in.note %}
+        <div class="mt-3 text-muted">
+          <i class="fas fa-sticky-note me-1"></i>{{ stock_in.note }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Thanh toán công nợ{% endblock %}
+{% block page_title %}<i class="fas fa-credit-card me-2"></i>Thanh toán công nợ{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Thanh toán công nợ</div>
+      <div class="card-body p-2">
+        <table class="table table-sm mb-4">
+          <tr><th>Đối tác</th><td class="fw-bold">{{ partner.name if partner else '-' }}</td></tr>
+          <tr><th>Số chứng từ</th><td><code>{{ debt.reference_code or '-' }}</code></td></tr>
+          <tr><th>Ngày phát sinh</th><td>{{ debt.date|dateformat }}</td></tr>
+          <tr><th>Ngày đến hạn</th><td class="{{ 'text-danger' if debt.status=='overdue' }}">{{ debt.due_date|dateformat if debt.due_date else '-' }}</td></tr>
+          <tr><th>Số tiền gốc</th><td>{{ debt.amount|currency }} VND</td></tr>
+          <tr><th>Đã thanh toán</th><td class="text-success">{{ debt.paid_amount|currency }} VND</td></tr>
+          <tr class="table-warning"><th>Còn lại phải TT</th><td class="fw-bold fs-6">{{ debt.balance|currency }} VND</td></tr>
+        </table>
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Ngày thanh toán</label>
+              <input type="date" name="date" class="form-control" required
+                     value="{{ '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Số tiền TT <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <input type="number" name="amount" class="form-control" step="1" min="1"
+                       max="{{ debt.balance }}" value="{{ debt.balance }}" required>
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Phương thức TT</label>
+              <select name="payment_method" class="form-select">
+                <option value="cash">Tiền mặt</option>
+                <option value="bank">Chuyển khoản</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Số tham chiếu</label>
+              <input type="text" name="reference" class="form-control" placeholder="Số CK, biên lai...">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Ghi chú</label>
+              <input type="text" name="note" class="form-control">
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <a href="{{ url_for('debt.index', partner_type=debt.partner_type) }}"
+               class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Quay lại</a>
+            <button type="submit" class="btn btn-success btn-lg">
+              <i class="fas fa-check me-1"></i>Xác nhận thanh toán
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,490 @@
+{% extends "base.html" %} {% block title %}Dashboard{% endblock %} {% block
+page_title %}<i class="fas fa-tachometer-alt me-2"></i>Dashboard{% endblock %}
+{% block content %}
+<!-- KPI Row -->
+<div class="row g-2 mb-2">
+  <div class="col-xl-3 col-md-6">
+    <div
+      class="kpi-card"
+      style="background: linear-gradient(135deg, #1a3a5c, #2563a8)"
+    >
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Doanh thu tháng này</div>
+          <div class="kpi-value">{{ revenue_month|currency }}</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div
+      class="kpi-card"
+      style="background: linear-gradient(135deg, #2563eb, #10b981)"
+    >
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Giá trị tồn kho</div>
+          <div class="kpi-value">{{ inv_value|currency }}</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-warehouse"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div
+      class="kpi-card"
+      style="background: linear-gradient(135deg, #b45309, #f59e0b)"
+    >
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <a
+            href="{{ url_for('debt.summary') }} "
+            class="text-decoration-none text-white"
+          >
+            <div class="kpi-label">Công nợ phải thu</div>
+            <div class="kpi-value">{{ receivable|currency }}</div>
+          </a>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-hand-holding-usd"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div
+      class="kpi-card"
+      style="background: linear-gradient(135deg, #7c3aed, #a855f7)"
+    >
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <a
+            href="{{ url_for('debt.summary') }} "
+            class="text-decoration-none text-white"
+          >
+            <div class="kpi-label">Công nợ phải trả</div>
+            <div class="kpi-value">{{ payable|currency }}</div>
+          </a>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Secondary KPIs -->
+<div class="row g-2 mb-2">
+  <div class="col-md-3">
+    <div class="kpi-card-sm shadow-sm">
+      <div class="text-primary mb-1" style="font-size: 20px">
+        <i class="fas fa-box"></i>
+      </div>
+      <div class="fw-bold fs-5">{{ total_products }}</div>
+      <div class="text-muted small">Hàng hóa</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card-sm shadow-sm">
+      <div class="text-success mb-1" style="font-size: 20px">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="fw-bold fs-5">{{ total_customers }}</div>
+      <div class="text-muted small">Khách hàng</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card-sm shadow-sm">
+      <div class="text-warning mb-1" style="font-size: 20px">
+        <i class="fas fa-truck"></i>
+      </div>
+      <div class="fw-bold fs-5">{{ total_suppliers }}</div>
+      <div class="text-muted small">Nhà cung cấp</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card-sm shadow-sm">
+      <div
+        class="{% if vat_net >= 0 %}text-danger{% else %}text-success{% endif %} mb-1"
+        style="font-size: 18px"
+      >
+        <i class="fas fa-percent"></i>
+      </div>
+      <div class="fw-bold fs-5">{{ vat_net|currency }}</div>
+      <div class="text-muted small">VAT phải nộp</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts + Tables Row -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="GET" class="row g-2 align-items-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"
+            ><i class="fas fa-calendar-alt"></i
+          ></span>
+
+          <input
+            type="text"
+            id="dashboardDateRange"
+            name="date_range"
+            class="form-control js-erp-date-range"
+            data-auto-submit="1"
+            placeholder="Chọn khoảng ngày dashboard"
+          />
+          <input type="hidden" name="from_date" value="{{ chart_from_val }}" />
+          <input type="hidden" name="to_date" value="{{ chart_to_val }}" />
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="btn-group btn-group-sm">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-range-preset="7"
+          >
+            7 ngày
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-range-preset="30"
+          >
+            30 ngày
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-range-preset="month"
+          >
+            Tháng này
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-2 mb-2">
+  <div class="col-xl-12">
+    <div class="card">
+      <div
+        class="card-header d-flex justify-content-between align-items-center"
+      >
+<span
+           ><i class="fas fa-chart-bar me-2"></i>Doanh thu thuần & Giá vốn hàng bán ({{
+           chart_from|dateformat }} - {{ chart_to|dateformat }})</span
+        >
+      </div>
+      <div class="card-body" style="height:400px">
+        <canvas id="revenueChart" ></canvas>
+      </div>
+    </div>
+  </div>
+  <!--<div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="fas fa-exclamation-triangle text-warning me-2"></i>Hàng sắp
+        hết kho
+      </div>
+      <div class="card-body p-0">
+        {% if low_stock %}
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr class="table-warning">
+                <th>Mã hàng</th>
+                <th>Tên hàng</th>
+                <th class="text-end">Tồn</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product, qty in low_stock %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('products.edit', id=product.id) }}"
+                    >{{ product.code }}</a
+                  >
+                </td>
+                <td>{{ product.name[:25] }}</td>
+                <td class="text-end text-danger fw-bold">
+                  {{ qty|number(0) }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+          <i class="fas fa-check-circle fa-2x text-success mb-2"></i><br />Không
+          có hàng sắp hết
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>-->
+</div>
+
+<!-- Recent Transactions -->
+<div class="row g-2">
+  <!--<div class="col-xl-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <span
+          ><i class="fas fa-arrow-circle-down text-success me-2"></i>Phiếu nhập
+          gần đây</span
+        >
+        <a
+          href="{{ url_for('stock_in.index') }}"
+          class="btn btn-sm btn-outline-primary"
+          >Xem tất cả</a
+        >
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <thead>
+            <tr class="table-light">
+              <th>Số phiếu</th>
+              <th>Ngày</th>
+              <th>NCC</th>
+              <th class="text-end">Tổng tiền</th>
+              <th>TT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for si in recent_stock_ins %}
+            <tr>
+              <td>
+                <a href="{{ url_for('stock_in.detail', id=si.id) }}"
+                  >{{ si.code }}</a
+                >
+              </td>
+              <td>{{ si.date|dateformat }}</td>
+              <td>{{ si.supplier.name[:20] if si.supplier else '-' }}</td>
+              <td class="text-end">{{ si.total_amount|currency }}</td>
+              <td>
+                <span class="badge badge-{{ (si.status or '')|lower }}"
+                  >{{ si.status|status_label }}</span
+                >
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>-->
+  <div class="col-xl-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <span
+          ><i class="fas fa-arrow-circle-up text-primary me-2"></i>Phiếu xuất
+          gần đây</span
+        >
+        <a
+          href="{{ url_for('stock_out.index') }}"
+          class="btn btn-sm btn-outline-primary"
+          >Xem tất cả</a
+        >
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <thead>
+            <tr class="table-light">
+              <th>Số phiếu</th>
+              <th>Ngày</th>
+              <th>Khách hàng</th>
+              <th class="text-end">Tổng tiền</th>
+              <th>TT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for so in recent_stock_outs %}
+            <tr>
+              <td>
+                <a href="{{ url_for('stock_out.detail', id=so.id) }}"
+                  >{{ so.code }}</a
+                >
+              </td>
+              <td>{{ so.date|dateformat }}</td>
+              <td class="customer-name" title="{{ so.customer.name if so.customer else '-' }}">
+                {{ so.customer.name[:20] if so.customer else '-' }}</td>
+              <td class="text-end">{{ so.total_amount|currency }}</td>
+              <td>
+                <span class="badge badge-{{ (so.status or '')|lower }}"
+                  >{{ so.status|status_label }}</span
+                >
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+  {% endblock %} {% block extra_js %}
+  <script id="dashboard-data" type="application/json">
+{
+  "labels": {{ chart_labels|tojson }},
+  "revenue": {{ chart_revenue|tojson }},
+  "purchase": {{ chart_purchase|tojson }},
+  "profit": {{ chart_profit|default([])|tojson }}
+}
+</script>
+
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+
+<script>
+(() => {
+    const canvas = document.getElementById("revenueChart");
+
+    if (!canvas || typeof Chart === "undefined") return;
+
+    let dashboardData = {};
+
+    try {
+        dashboardData = JSON.parse(
+            document.getElementById("dashboard-data").textContent
+        );
+    } catch (err) {
+        console.error("Lỗi parse dashboard data:", err);
+        return;
+    }
+
+    const ctx = canvas.getContext("2d");
+    const isDarkTheme =
+        document.documentElement.getAttribute("data-bs-theme") === "dark" ||
+        document.body.classList.contains("dark-mode") ||
+        localStorage.getItem("theme") === "dark";
+    const axisColor = isDarkTheme ? "#d1d5db" : "#334155";
+    const gridColor = isDarkTheme
+        ? "rgba(255,255,255,0.08)"
+        : "rgba(15,23,42,0.08)";
+
+    // Hủy chart cũ nếu có
+    if (window.revenueChart instanceof Chart) {
+        window.revenueChart.destroy();
+    }
+
+    window.revenueChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: dashboardData.labels || [],
+            datasets: [
+                {
+                    label: "Doanh thu thuần",
+                    data: dashboardData.revenue || [],
+                    fill: true,
+                    backgroundColor: "rgba(59,130,246,0.12)",
+                    borderColor: "#3b82f6",
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                },
+{
+                     label: "Giá vốn hàng bán",
+                     data: dashboardData.purchase || [],
+                    fill: true,
+                    backgroundColor: "rgba(16,185,129,0.10)",
+                    borderColor: "#10b981",
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                },
+                {
+                    label: "Lợi nhuận",
+                    data: dashboardData.profit || [],
+                    fill: false,
+                    borderColor: "#f59e0b",
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                    hidden: !(dashboardData.profit || []).length,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            interaction: {
+                mode: "index",
+                intersect: false,
+            },
+
+            plugins: {
+                legend: {
+                    position: "top",
+                    labels: {
+                        color: axisColor,
+                        usePointStyle: true,
+                        padding: 20,
+                    },
+                },
+
+                tooltip: {
+                    backgroundColor: "#111827",
+                    titleColor: "#fff",
+                    bodyColor: "#fff",
+                    borderColor: "#374151",
+                    borderWidth: 1,
+
+                    callbacks: {
+                        label: (context) => {
+                            return (
+                                context.dataset.label +
+                                ": " +
+                                new Intl.NumberFormat("vi-VN").format(
+                                    context.raw || 0
+                                ) +
+                                " đ"
+                            );
+                        },
+                    },
+                },
+            },
+
+            scales: {
+                x: {
+                    ticks: {
+                        color: axisColor,
+                    },
+                    grid: {
+                        color: gridColor,
+                    },
+                },
+
+                y: {
+                    beginAtZero: true,
+
+                    ticks: {
+                        color: axisColor,
+
+                        callback: (value) =>
+                            new Intl.NumberFormat("vi-VN").format(value),
+                    },
+
+                    grid: {
+                        color: gridColor,
+                    },
+                },
+            },
+
+            elements: {
+                point: {
+                    hitRadius: 10,
+                },
+            },
+        },
+    });
+})();
+</script>
+  {% endblock %}

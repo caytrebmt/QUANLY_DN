@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Phiếu kiểm kê #{{ '%06d' % session.id }}{% endblock %}
+{% block page_title %}
+<i class="fas fa-clipboard-check me-2"></i>
+Phiếu kiểm kê #{{ '%06d' % session.id }} - {{ session.warehouse.name }}
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <span class="badge bg-{{ 'warning' if session.status=='draft' else 'success' if session.status=='completed' else 'danger' }}">
+        {{ 'Nháp' if session.status=='draft' else 'Hoàn thành' if session.status=='completed' else 'Đã hủy' }}
+      </span>
+      <span class="ms-2 text-muted">Ngày: {{ session.count_date|dateformat }}</span>
+    </div>
+    <div class="d-flex gap-2">
+      {% if session.status == 'draft' %}
+      <form method="POST" action="{{ url_for('stocktaking.complete', id=session.id) }}" class="d-inline"
+            onsubmit="return confirm('Hoàn thành phiếu sẽ điều chỉnh tồn kho. Bạn chắc chắn?')">
+        <button type="submit" class="btn btn-sm btn-success">
+          <i class="fas fa-check me-1"></i>Hoàn thành
+        </button>
+      </form>
+      <form method="POST" action="{{ url_for('stocktaking.cancel', id=session.id) }}" class="d-inline"
+            onsubmit="return confirm('Hủy phiếu kiểm kê?')">
+        <button type="submit" class="btn btn-sm btn-danger">
+          <i class="fas fa-times me-1"></i>Hủy
+        </button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('stocktaking.export_excel', id=session.id) }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>Xuất Excel
+      </a>
+    </div>
+  </div>
+  <div class="card-body">
+    {% if session.note %}
+    <div class="alert alert-info py-2">
+      <strong>Ghi chú:</strong> {{ session.note }}
+    </div>
+    {% endif %}
+
+    {% if discrepancies %}
+    <div class="alert alert-warning">
+      <strong>Chênh lệch phát hiện ({{ discrepancies|length }}):</strong>
+      <ul class="mb-0 mt-2">
+        {% for d in discrepancies %}
+        <li>
+          {{ d.product_code }} - {{ d.product_name }}:
+          Sổ {{ d.book_qty }} → Thực tế {{ d.actual_qty }}
+          (Chênh: {{ d.difference|abs }} {{ 'thiếu' if d.difference < 0 else 'thừa' }})
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th>Mã hàng</th>
+            <th>Tên hàng</th>
+            <th class="text-end">Số liệu sổ</th>
+            <th class="text-end">Số liệu thực tế</th>
+            <th class="text-end">Chênh lệch</th>
+            <th>Ghi chú</th>
+            {% if session.status == 'draft' %}
+            <th>Nhập liệu</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr class="{{ 'table-warning' if item.actual_quantity is none else '' }}">
+            <td>{{ item.product.code }}</td>
+            <td>{{ item.product.name }}</td>
+            <td class="text-end">{{ item.book_quantity|default(0, true) }}</td>
+            <td class="text-end fw-bold">
+              {% if item.actual_quantity is not none %}
+                {{ item.actual_quantity }}
+              {% else %}
+                <span class="text-muted">Chưa nhập</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if item.actual_quantity is not none %}
+                {% set diff = item.actual_quantity - item.book_quantity %}
+                {% if diff > 0 %}
+                  <span class="text-success">+{{ diff }}</span>
+                {% elif diff < 0 %}
+                  <span class="text-danger">{{ diff }}</span>
+                {% else %}
+                  <span class="text-muted">0</span>
+                {% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ item.note or '' }}</td>
+            {% if session.status == 'draft' %}
+            <td>
+              <form method="POST" action="{{ url_for('stocktaking.update_item', id=session.id) }}" class="d-flex gap-1">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <input type="number" step="0.001" name="actual_quantity" class="form-control form-control-sm"
+                       style="width: 100px" value="{{ item.actual_quantity or '' }}" placeholder="Thực tế">
+                <input type="text" name="note" class="form-control form-control-sm"
+                       style="width: 120px" value="{{ item.note or '' }}" placeholder="Ghi chú">
+                <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save"></i></button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

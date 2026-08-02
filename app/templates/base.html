@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="{{ session.get('lang', 'vi') }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>{% block title %}ERP-VIET{% endblock %} | {{ app_name }}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&subset=vietnamese&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/all.min.css') }}"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/select2.css') }}"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/select2-bootstrap-5-theme.min.css') }}"
+    />
+
+    <link
+      rel="icon"
+      sizes="32x32"
+      href="{{ url_for('static', filename='favicon.ico') }}"
+    />
+    <link
+      rel="icon"
+      sizes="16x16"
+      href="{{ url_for('static', filename='favicon.ico') }}"
+    />
+    <script>
+      (function () {
+        const theme = localStorage.getItem("erp_theme") || "dark";
+
+        const href =
+          theme === "dark"
+            ? "{{ url_for('static', filename='css/basedark.css') }}"
+            : "{{ url_for('static', filename='css/baselight.css') }}";
+
+        document.write(
+          '<link id="theme-style" rel="stylesheet" href="' + href + '">',
+        );
+      })();
+    </script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/flatpickr.min.css') }}"/>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/erp_advanced_table.css') }}"/>
+
+    {% block extra_css %}
+    <style>
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #print-area,
+        #print-area * {
+          visibility: visible;
+        }
+        #print-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          background: #fff;
+          color: #000;
+          padding: 20px;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+    </style>
+    {% endblock %}
+  </head>
+  <body class="preload">
+    <div id="overlay"></div>
+
+    {% if current_user.is_authenticated %}
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-logo">
+        <a href="/">
+          <img
+            src="{{ url_for('static', filename='image/logo.png') }}"
+            alt="ERP-VIET Logo"
+          />
+        </a>
+        <span class="logo-text">ERP-VIET</span>
+      </div>
+
+      <div class="nav-scroll pt-2 pb-3">
+        {% for menu in nav_menus %} {% set children = menu.visible_children if
+        menu.visible_children is defined else [] %} {% if not children %} {% set
+        is_active = request.path == menu.url %}
+        <div class="nav-item">
+          <a
+            class="nav-link {% if is_active %}active{% endif %}"
+            href="{{
+            menu.url or '#' }}"
+            title="{{ menu.name }}"
+          >
+            <span class="nav-link-content">
+              <i class="{{ menu.icon }} menu-icon"></i>
+              <span class="link-text">{{ _(menu.name) }}</span>
+            </span>
+          </a>
+        </div>
+        {% else %} {% set any_active = false %} {% for child in children %} {%
+        if child.url and request.path.startswith(child.url) %} {% set any_active
+        = true %} {% endif %} {% endfor %}
+        <div class="nav-item nav-group">
+          <button
+            class="nav-link group-toggle {% if not any_active %}collapsed{% endif %}"
+            data-bs-toggle="collapse"
+            data-bs-target="#group-{{ menu.id }}"
+            aria-expanded="{{ 'true' if any_active else 'false' }}"
+            title="{{ menu.name }}"
+            data-bs-placement="right"
+          >
+            <span class="nav-link-content">
+              <i class="{{ menu.icon }} menu-icon"></i>
+              <span class="link-text">{{ _(menu.name) }}</span>
+            </span>
+            <i class="fas fa-chevron-down caret"></i>
+          </button>
+          <div
+            class="collapse {% if any_active %}show{% endif %}"
+            id="group-{{ menu.id }}"
+            data-bs-parent="#sidebar"
+          >
+            {% for child in children %} {% set child_active = request.path ==
+            (child.url or '') %}
+            <a
+              class="nav-sublink {% if child_active %}active{% endif %}"
+              href="{{ child.url or '#' }}"
+            >
+              <span class="nav-link-content">
+                <i class="{{ child.icon }} menu-icon"></i>
+                <span class="link-text">{{ _(child.name) }}</span>
+              </span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %} {% endfor %}
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <div id="main-content">
+      <script>
+        (function () {
+          var sidebar = document.getElementById("sidebar");
+          var mainContent = document.getElementById("main-content");
+          if (
+            sidebar &&
+            mainContent &&
+            localStorage.getItem("erp_sidebar_collapsed") === "1"
+          ) {
+            sidebar.classList.add("collapsed");
+            mainContent.classList.add("expanded");
+          }
+          var openMenuId = localStorage.getItem("erp_sidebar_menu");
+          if (openMenuId) {
+            var menuEl = document.getElementById(openMenuId);
+            if (menuEl) {
+              menuEl.classList.add("show");
+              var btn = document.querySelector(
+                '[data-bs-target="#' + openMenuId + '"]',
+              );
+              if (btn) {
+                btn.classList.remove("collapsed");
+                btn.setAttribute("aria-expanded", "true");
+              }
+            }
+          }
+
+          // Gỡ bỏ class preload sau khi tải xong để kích hoạt lại các hiệu ứng chuyển động CSS (transitions)
+          window.addEventListener("load", function () {
+            setTimeout(function () {
+              document.body.classList.remove("preload");
+            }, 50);
+          });
+        })();
+      </script>
+      <!-- Topbar -->
+      <div class="topbar no-print">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h6 class="page-title mb-0">
+            {% block page_title %}{{ _('Dashboard') }}{% endblock %}
+          </h6>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <button
+            id="shopRedirect"
+            class="btn btn-sm btn-outline-secondary"
+            title="Cửa Hàng"
+          >
+            <i class="fas fa-shopping-cart"></i>
+          </button>
+
+          <button
+            id="themeToggle"
+            class="btn btn-sm btn-outline-secondary"
+            title="Đổi theme"
+          >
+            <i class="fas fa-moon"></i>
+          </button>
+
+          <div class="dropdown">
+            <button
+              class="btn btn-sm btn-outline-secondary dropdown-toggle"
+              data-bs-toggle="dropdown"
+            >
+              <i class="fas fa-language me-1"></i>{{ _('Tiếng Việt') if session.get('lang','vi')=='vi' else _('English') }}
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a
+                  class="dropdown-item {% if session.get('lang','vi')=='vi' %}active{% endif %}"
+                  href="{{ url_for('auth.switch_lang', lang_code='vi') }}"
+                  >{{ _('Tiếng Việt') }}</a
+                >
+              </li>
+              <li>
+                <a
+                  class="dropdown-item {% if session.get('lang','vi')=='en' %}active{% endif %}"
+                  href="{{ url_for('auth.switch_lang', lang_code='en') }}"
+                  >{{ _('English') }}</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div class="dropdown">
+            <button
+              class="btn btn-sm btn-outline-secondary dropdown-toggle"
+              data-bs-toggle="dropdown"
+            >
+              <i class="fas fa-user me-1"></i>{{ current_user.full_name }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a
+                  class="dropdown-item"
+                  href="{{ url_for('auth.change_password') }}"
+                >
+                  <i class="fas fa-key me-2"></i>{{ _('Đổi mật khẩu') }}</a
+                >
+              </li>
+              {% if current_user.role == 'admin' %}
+              <li>
+                <a class="dropdown-item" href="{{ url_for('settings.users.users_list') }}">
+                  <i class="fas fa-users-cog me-2"></i>{{ _('Quản lý users')
+                  }}</a
+                >
+              </li>
+              {% endif %}
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <a
+                  class="dropdown-item text-danger"
+                  href="{{ url_for('auth.logout') }}"
+                >
+                  <i class="fas fa-sign-out-alt me-2"></i>{{ _('Đăng xuất')
+                  }}</a
+                >
+              </li>
+            </ul>
+          </div>
+          <!-- Hiển thị ngày tháng ở góc phải trên cùng (nếu cần) 
+          <span class="text-muted small">
+            <i class="fas fa-calendar-alt"></i>
+            {{ moment().format('DD/MM/YYYY') if moment else '' }}
+          </span>
+        --></div>
+      </div>
+
+      <!-- Flash messages -->
+      <div class="toast-container no-print">
+        {% with messages = get_flashed_messages(with_categories=true) %} {% for
+        category, message in messages %}
+        <div
+          class="toast align-items-center text-white bg-{{ 'success' if category=='success' else 'danger' if category=='danger' else 'warning' if category=='warning' else 'info' }} border-0 show mb-2"
+          role="alert"
+        >
+          <div class="d-flex">
+            <div class="toast-body">
+              <i
+                class="fas fa-{{ 'check' if category=='success' else 'times' if category=='danger' else 'exclamation' if category=='warning' else 'info' }}-circle me-2"
+              ></i
+              >{{ message }}
+            </div>
+            <button
+              type="button"
+              class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"
+            ></button>
+          </div>
+        </div>
+        {% endfor %} {% endwith %}
+      </div>
+
+      <!-- Content -->
+      <div class="container-fluid p-4">{% block content %}{% endblock %}</div>
+    </div>
+
+    {% else %} {% block auth_content %}{% endblock %} {% endif %}
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/select2.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/flatpickr.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+      // Sidebar toggle
+      //document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+      //  document.getElementById('sidebar').classList.toggle('collapsed');
+      //  document.getElementById('main-content').classList.toggle('expanded');
+      //});
+
+      const toggleBtn = document.getElementById("sidebarToggle");
+      const sidebar = document.getElementById("sidebar");
+      const mainContent = document.getElementById("main-content");
+      const overlay = document.getElementById("overlay");
+      const SIDEBAR_STATE_KEY = "erp_sidebar_collapsed";
+
+      const MENU_STATE_KEY = "erp_sidebar_menu";
+      document.querySelectorAll("#sidebar .collapse").forEach((el) => {
+        el.addEventListener("shown.bs.collapse", function () {
+          localStorage.setItem(MENU_STATE_KEY, el.id);
+        });
+      });
+
+      function applySidebarState() {
+        if (!sidebar || !mainContent) return;
+
+        const collapsed = localStorage.getItem(SIDEBAR_STATE_KEY) === "1";
+
+        sidebar.classList.toggle("collapsed", collapsed);
+        mainContent.classList.toggle("expanded", collapsed);
+      }
+
+      function restoreMenuState() {
+        const openMenuId = localStorage.getItem(MENU_STATE_KEY);
+        if (!openMenuId) return;
+
+        const el = document.getElementById(openMenuId);
+        if (el) {
+          el.classList.add("show");
+
+          const btn = document.querySelector(
+            `[data-bs-target="#${openMenuId}"]`,
+          );
+          if (btn) {
+            btn.classList.remove("collapsed");
+            btn.setAttribute("aria-expanded", "true");
+          }
+        }
+      }
+      // Khôi phục trạng thái khi load trang
+      applySidebarState();
+      restoreMenuState();
+
+      toggleBtn?.addEventListener("click", function () {
+        if (window.innerWidth <= 768) {
+          // MOBILE MODE
+          sidebar.classList.toggle("show");
+          overlay.classList.toggle("show");
+        } else {
+          // DESKTOP MODE
+          const willCollapse = !sidebar.classList.contains("collapsed");
+          sidebar.classList.toggle("collapsed", willCollapse);
+          mainContent.classList.toggle("expanded", willCollapse);
+
+          if (willCollapse) {
+            // Tìm tất cả các menu con đang mở và đóng chúng lại bằng Bootstrap API
+            document
+              .querySelectorAll("#sidebar .collapse.show")
+              .forEach((el) => {
+                const bsCollapse = bootstrap.Collapse.getInstance(el);
+                if (bsCollapse) {
+                  bsCollapse.hide();
+                } else {
+                  el.classList.remove("show"); // Fallback nếu chưa khởi tạo instance
+                }
+              });
+            // Xóa trạng thái lưu trong localStorage để khi reload không bị bung ra lại
+            localStorage.removeItem(MENU_STATE_KEY);
+          }
+          localStorage.setItem(SIDEBAR_STATE_KEY, willCollapse ? "1" : "0");
+        }
+      });
+
+      // click overlay → đóng sidebar
+      overlay?.addEventListener("click", function () {
+        sidebar.classList.remove("show");
+        overlay.classList.remove("show");
+      });
+
+      // Đổi kích thước màn hình thì áp lại state desktop
+      // window.addEventListener("resize", applySidebarState);
+      let resizeTimer;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(applySidebarState, 200);
+      });
+      // Khi sidebar đang thu gọn (desktop), click menu nhóm sẽ bung sidebar trước,
+      // tránh toggle submenu gây cảm giác "kẹt chọn".
+      document.querySelectorAll("#sidebar .group-toggle").forEach((btn) => {
+        btn.addEventListener("click", function (e) {
+          if (!sidebar.classList.contains("collapsed")) return;
+
+          e.preventDefault();
+
+          sidebar.classList.remove("collapsed");
+          mainContent.classList.remove("expanded");
+
+          localStorage.setItem(SIDEBAR_STATE_KEY, "0");
+        });
+      });
+
+      // tự động đóng thông báo
+      document.querySelectorAll(".toast").forEach((t) => {
+        setTimeout(() => {
+          var toast = bootstrap.Toast.getOrCreateInstance(t);
+          toast.hide();
+        }, 3000);
+      });
+
+      document.querySelectorAll("#sidebar .nav-group").forEach((group) => {
+        group.addEventListener("mouseenter", function () {
+          if (!sidebar.classList.contains("collapsed")) return;
+
+          const submenu = group.querySelector(".collapse");
+          if (!submenu) return;
+
+          submenu.classList.add("show");
+        });
+
+        group.addEventListener("mouseleave", function () {
+          if (!sidebar.classList.contains("collapsed")) return;
+
+          const submenu = group.querySelector(".collapse");
+          if (!submenu) return;
+
+          submenu.classList.remove("show");
+        });
+      });
+      // Format currency inputs
+      function formatCurrency(el) {
+        let v = parseFloat(el.value.replace(/,/g, "")) || 0;
+        el.value = v.toLocaleString("vi-VN");
+      }
+      // Number formatting for display
+      function fmtCurrency(n) {
+        return new Intl.NumberFormat("vi-VN").format(Math.round(n || 0));
+      }
+
+      // ERP Date Range Picker (flatpickr + preset + auto submit)
+      function toYmd(d) {
+        if (!(d instanceof Date)) return "";
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
+      function parseYmd(s) {
+        if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+        const [y, m, d] = s.split("-").map(Number);
+        return new Date(y, m - 1, d);
+      }
+      function formatRangeLabel(fromVal, toVal) {
+        const ymdToDmy = (v) => {
+          if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return v || "";
+          const [y, m, d] = v.split("-");
+          return `${d}/${m}/${y}`;
+        };
+        if (!fromVal && !toVal) return "";
+        if (fromVal && !toVal) return ymdToDmy(fromVal);
+        return `${ymdToDmy(fromVal)} đến ${ymdToDmy(toVal)}`;
+      }
+      document.querySelectorAll(".js-erp-date-range").forEach((input) => {
+        const form = input.closest("form");
+        const fromInput = form?.querySelector('input[name="from_date"]');
+        const toInput = form?.querySelector('input[name="to_date"]');
+        if (!form || !fromInput || !toInput) return;
+
+        const autoSubmit = input.dataset.autoSubmit === "1";
+        const submitNow = () => {
+          if (!autoSubmit) return;
+          if (typeof form.requestSubmit === "function") {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        };
+        const setRange = (fromDate, toDate) => {
+          const fromVal = toYmd(fromDate);
+          const toVal = toYmd(toDate || fromDate);
+          fromInput.value = fromVal;
+          toInput.value = toVal;
+          input.value = formatRangeLabel(fromVal, toVal);
+        };
+        const syncPicker = (fromDate, toDate) => {
+          if (!input._flatpickr) return;
+          input._flatpickr.setDate([fromDate, toDate || fromDate], false);
+        };
+
+        const defaultDates = [];
+        if (fromInput.value) defaultDates.push(fromInput.value);
+        if (toInput.value) defaultDates.push(toInput.value);
+        input.value = formatRangeLabel(fromInput.value, toInput.value);
+
+        if (window.flatpickr) {
+          flatpickr(input, {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d/m/Y",
+            locale: {
+              rangeSeparator: " đến ",
+              firstDayOfWeek: 1,
+            },
+            allowInput: false,
+            defaultDate: defaultDates.length ? defaultDates : null,
+            onReady: function (selectedDates, dateStr, instance) {
+              if (instance.altInput) {
+                instance.altInput.placeholder = input.placeholder || "Chọn khoảng ngày";
+              }
+            },
+            onClose: function (selectedDates) {
+              if (!selectedDates || selectedDates.length === 0) return;
+              if (selectedDates.length === 1) {
+                setRange(selectedDates[0], selectedDates[0]);
+              } else {
+                setRange(selectedDates[0], selectedDates[1]);
+              }
+              submitNow();
+            },
+          });
+        } else {
+          // Fallback nhẹ nếu CDN bị chặn
+          input.placeholder = "YYYY-MM-DD đến YYYY-MM-DD";
+          input.readOnly = false;
+          input.addEventListener("change", function () {
+            const raw = (input.value || "").trim();
+            const parts = raw
+              .split("đến")
+              .map((x) => x.trim())
+              .filter(Boolean);
+            if (
+              parts.length === 2 &&
+              parseYmd(parts[0]) &&
+              parseYmd(parts[1])
+            ) {
+              fromInput.value = parts[0];
+              toInput.value = parts[1];
+              submitNow();
+            }
+          });
+        }
+
+        form.querySelectorAll("[data-range-preset]").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const preset = this.getAttribute("data-range-preset");
+            const today = new Date();
+            let from = new Date(today);
+            let to = new Date(today);
+
+            if (preset === "7") {
+              from.setDate(today.getDate() - 6);
+            } else if (preset === "30") {
+              from.setDate(today.getDate() - 29);
+            } else if (preset === "month") {
+              from = new Date(today.getFullYear(), today.getMonth(), 1);
+            } else {
+              return;
+            }
+            setRange(from, to);
+            syncPicker(from, to);
+            submitNow();
+          });
+        });
+      });
+
+      // Auto-upgrade search inputs to Select2 (tags mode keeps free-text search behavior)
+      (function () {
+        if (!window.jQuery || !jQuery.fn || !jQuery.fn.select2) return;
+        const searchDebounceMap = new WeakMap();
+        let activeSearchSelect = null;
+
+        document
+          .querySelectorAll('input[name="search"]')
+          .forEach((input, idx) => {
+            if (input.dataset.searchUpgraded === "1") return;
+            if (input.type && input.type.toLowerCase() !== "text") return;
+            if (input.closest(".select2-container")) return;
+
+            const form = input.closest("form");
+            if (!form) return;
+
+            const value = (input.value || "").trim();
+            const placeholder =
+              input.getAttribute("placeholder") || "Tìm kiếm...";
+            const select = document.createElement("select");
+            const selectId = `searchSelAuto${idx}_${Date.now()}`;
+
+            select.name = input.name;
+            select.id = selectId;
+            select.className = input.className;
+            select.setAttribute("data-search-auto", "1");
+            select.style.width = "100%";
+
+            const emptyOpt = document.createElement("option");
+            emptyOpt.value = "";
+            emptyOpt.textContent = "";
+            select.appendChild(emptyOpt);
+
+            if (value) {
+              const currentOpt = document.createElement("option");
+              currentOpt.value = value;
+              currentOpt.textContent = value;
+              currentOpt.selected = true;
+              select.appendChild(currentOpt);
+            }
+
+            input.dataset.searchUpgraded = "1";
+            input.parentNode.insertBefore(select, input);
+            input.remove();
+
+            const $select = jQuery(select);
+            $select.select2({
+              theme: "select2",
+              placeholder: placeholder,
+              allowClear: true,
+              width: "100%",
+              tags: true,
+              selectOnClose: true,
+            });
+
+            let lastVal = $select.val() || "";
+            const submitForm = () => {
+              const currVal = $select.val() || "";
+              if (currVal === lastVal) return;
+              lastVal = currVal;
+              if (typeof form.requestSubmit === "function") {
+                form.requestSubmit();
+              } else {
+                form.submit();
+              }
+            };
+
+            $select.on("change", submitForm);
+            $select.on("select2:clear", submitForm);
+            $select.on("select2:select", submitForm);
+            $select.on("select2:open", function () {
+              activeSearchSelect = select;
+            });
+          });
+
+        document.addEventListener("input", function (e) {
+          if (
+            !e.target ||
+            !e.target.classList.contains("select2-search__field")
+          )
+            return;
+          if (
+            !activeSearchSelect ||
+            activeSearchSelect.getAttribute("data-search-auto") !== "1"
+          )
+            return;
+
+          const typed = (e.target.value || "").trim();
+          const $active = jQuery(activeSearchSelect);
+          const current = (($active.val() || "") + "").trim();
+          if (typed === current) return;
+
+          const oldTimer = searchDebounceMap.get(activeSearchSelect);
+          if (oldTimer) clearTimeout(oldTimer);
+
+          const timer = setTimeout(function () {
+            let opt = Array.from(activeSearchSelect.options).find(
+              (o) => o.value === typed,
+            );
+            if (!opt) {
+              opt = document.createElement("option");
+              opt.value = typed;
+              opt.textContent = typed;
+              activeSearchSelect.appendChild(opt);
+            }
+            $active.val(typed).trigger("change");
+          }, 1000);
+
+          searchDebounceMap.set(activeSearchSelect, timer);
+        });
+      })();
+    </script>
+    {% block extra_js %}{% endblock %} {# ── CSRF auto-patch ── #} {# 1. Thêm
+    hidden input vào mọi form POST chưa có csrf_token #} {# 2. Patch
+    window.fetch để tự gắn X-CSRFToken header khi POST/PUT #}
+    <script>
+      (function () {
+        var token = document.querySelector('meta[name="csrf-token"]');
+        if (!token) return;
+        var csrfValue = token.content;
+
+        // ── Patch tất cả <form method="POST"> hiện có trong DOM ──────────
+        function patchForms() {
+          document.querySelectorAll("form").forEach(function (form) {
+            var method = (form.getAttribute("method") || "GET").toUpperCase();
+            if (method !== "POST") return;
+            if (form.querySelector('input[name="csrf_token"]')) return; // đã có rồi
+            var inp = document.createElement("input");
+            inp.type = "hidden";
+            inp.name = "csrf_token";
+            inp.value = csrfValue;
+            form.appendChild(inp);
+          });
+        }
+        patchForms();
+
+        // Patch form được tạo động (AJAX-rendered) bằng MutationObserver
+        var observer = new MutationObserver(patchForms);
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // ── Patch window.fetch để tự gắn header khi POST/PUT/PATCH/DELETE ─
+        var _fetch = window.fetch;
+        window.fetch = function (input, init) {
+          init = init || {};
+          var method = (init.method || "GET").toUpperCase();
+          if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+            init.headers = Object.assign({}, init.headers, {
+              "X-CSRFToken": csrfValue,
+            });
+          }
+          return _fetch(input, init);
+        };
+      })();
+    </script>
+
+    <script>
+      (function () {
+        const THEME_KEY = "erp_theme";
+
+        const themeLink = document.getElementById("theme-style");
+
+        const toggleBtn = document.getElementById("themeToggle");
+
+        const icon = toggleBtn?.querySelector("i");
+
+        function applyTheme(theme) {
+          const isDark = theme === "dark";
+
+          themeLink.href = isDark
+            ? "{{ url_for('static', filename='css/basedark.css') }}"
+            : "{{ url_for('static', filename='css/baselight.css') }}";
+
+          if (icon) {
+            icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+          }
+
+          document.body.setAttribute("data-theme", theme);
+        }
+
+        // Load theme đã lưu
+        let currentTheme = localStorage.getItem(THEME_KEY) || "dark";
+
+        applyTheme(currentTheme);
+
+        // Toggle
+        toggleBtn?.addEventListener("click", function () {
+          currentTheme = currentTheme === "light" ? "dark" : "light";
+
+          localStorage.setItem(THEME_KEY, currentTheme);
+
+          applyTheme(currentTheme);
+        });
+      })();
+    </script>
+    <script>
+      $(document).on("change", "[data-auto-submit]", function () {
+        if (this.classList && this.classList.contains("js-erp-date-range")) return;
+        $(this).closest("form").submit();
+      });
+    </script>
+    <script src="{{ url_for('static', filename='js/erp_advanced_table.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/erp_advanced_table_server.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/erp_print.js') }}"></script>
+    <script>
+      document.getElementById('shopRedirect')?.addEventListener('click', function() {
+        window.open(`http://${window.location.hostname}:3000/`, '_blank');
+      });
+    </script>
+    {% block scripts %}{% endblock %}
+
+    <!-- Print Preview Modal -->
+    <div class="modal fade" id="voucherPrintModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Xem trước phiếu in</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="print-modal-body" style="background:#fff; color:#000;">
+            <p class="text-center text-muted">Đang tải nội dung...</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            <button type="button" id="btnPrintFromModal" class="btn btn-primary">
+              <i class="fas fa-print me-1"></i>In phiếu
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="print-area"></div>
+  </body>
+</html>

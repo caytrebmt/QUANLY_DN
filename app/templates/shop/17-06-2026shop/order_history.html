@@ -1,0 +1,235 @@
+<!-- templates/shop/order_history.html -->
+{% extends "shop/base.html" %}
+
+{% block title %}Lịch sử đơn hàng{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <i class="fas fa-receipt text-accent"></i> Lịch sử đơn hàng
+    </h1>
+
+    <!-- Status Filter Tabs -->
+    <div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+        <a href="{{ url_for('shop.order_history') }}" class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap {% if not status %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+            Tất cả
+            <span class="ml-1 text-xs">({{ total_all }})</span>
+        </a>
+        <a href="{{ url_for('shop.order_history', status='new') }}" class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap {% if status == 'new' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+            <i class="fas fa-clock mr-1"></i>Mới
+        </a>
+        <a href="{{ url_for('shop.order_history', status='processing') }}" class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap {% if status == 'processing' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+            <i class="fas fa-gear mr-1"></i>Đang xử lý
+        </a>
+        <a href="{{ url_for('shop.order_history', status='shipping') }}" class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap {% if status == 'shipping' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+            <i class="fas fa-truck mr-1"></i>Đang giao
+        </a>
+        <a href="{{ url_for('shop.order_history', status='completed') }}" class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap {% if status == 'completed' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+            <i class="fas fa-check-circle mr-1"></i>Hoàn thành
+        </a>
+        <a href="{{ url_for('shop.order_history', status='cancelled') }}" class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap {% if status == 'cancelled' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+            <i class="fas fa-times-circle mr-1"></i>Đã hủy
+        </a>
+    </div>
+
+    {% if orders.items %}
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <!-- Desktop Header -->
+        <div class="hidden md:grid grid-cols-[120px,1fr,140px,130px,130px,100px] gap-4 p-4 bg-gray-50 border-b border-gray-100 text-sm font-semibold text-gray-600">
+            <span>Mã đơn</span>
+            <span>Sản phẩm</span>
+            <span>Ngày đặt</span>
+            <span>Tổng tiền</span>
+            <span>Trạng thái</span>
+            <span>Thao tác</span>
+        </div>
+
+        <!-- Order Items -->
+        <div class="divide-y divide-gray-100">
+            {% for order in orders.items %}
+            <div class="order-item p-4 hover:bg-gray-50 transition">
+                <!-- Mobile: Flex column, Desktop: Grid -->
+                <div class="flex flex-col md:grid md:grid-cols-[120px,1fr,140px,130px,130px,100px] md:gap-4">
+                    <!-- Order Code -->
+                    <div class="mb-3 md:mb-0">
+                        <span class="md:hidden text-xs text-gray-500">Mã đơn</span>
+                        <div class="font-mono font-bold text-primary">#{{ order.code }}</div>
+                        <div class="text-xs text-gray-400 md:hidden mt-1">{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '' }}</div>
+                    </div>
+
+                    <!-- Products -->
+                    <div class="mb-3 md:mb-0">
+                        <span class="md:hidden text-xs text-gray-500">Sản phẩm</span>
+                        <div class="flex gap-2 items-center">
+                            {% for item in order.items.limit(3).all() %}
+                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
+                                📦
+                            </div>
+                            {% endfor %}
+                            {% if order.items.count() > 3 %}
+                            <span class="text-xs text-gray-400">+{{ order.items.count() - 3 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 line-clamp-1">
+                            {{ order.items.first().product_name_snapshot if order.items.first() else '' }}
+                            {% if order.items.count() > 1 %} và {{ order.items.count() - 1 }} SP khác{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Date -->
+                    <div class="mb-3 md:mb-0">
+                        <span class="md:hidden text-xs text-gray-500">Ngày đặt</span>
+                        <div class="text-sm text-gray-600">{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else '' }}</div>
+                        <div class="text-xs text-gray-400">{{ order.created_at.strftime('%H:%M') if order.created_at else '' }}</div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="mb-3 md:mb-0">
+                        <span class="md:hidden text-xs text-gray-500">Tổng tiền</span>
+                        <div class="font-bold text-primary">{{ order.total_amount|currency }}</div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="mb-3 md:mb-0">
+                        <span class="md:hidden text-xs text-gray-500">Trạng thái</span>
+                        <span class="status-badge inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+                            {% if order.status == 'new' %}bg-blue-100 text-blue-700
+                            {% elif order.status == 'processing' %}bg-yellow-100 text-yellow-700
+                            {% elif order.status == 'shipping' %}bg-purple-100 text-purple-700
+                            {% elif order.status == 'completed' %}bg-green-100 text-green-700
+                            {% else %}bg-red-100 text-red-700{% endif %}">
+                            <i class="fas 
+                                {% if order.status == 'new' %}fa-clock
+                                {% elif order.status == 'processing' %}fa-gear
+                                {% elif order.status == 'shipping' %}fa-truck
+                                {% elif order.status == 'completed' %}fa-check-circle
+                                {% else %}fa-times-circle{% endif %} text-xs"></i>
+                            {% if order.status == 'new' %}Mới
+                            {% elif order.status == 'processing' %}Đang xử lý
+                            {% elif order.status == 'shipping' %}Đang giao
+                            {% elif order.status == 'completed' %}Hoàn thành
+                            {% else %}Đã hủy{% endif %}
+                        </span>
+                        {% if order.erp_status %}
+                        <div class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-warehouse"></i> {{ order.erp_status }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-2">
+                        <a href="{{ url_for('shop.order_detail', code=order.code) }}" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-accent hover:text-accent transition">
+                            <i class="fas fa-eye"></i> Chi tiết
+                        </a>
+                        {% if order.status == 'new' %}
+                        <button onclick="cancelOrder({{ order.id }}, this)" class="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">
+                            <i class="fas fa-times"></i> Hủy
+                        </button>
+                        {% endif %}
+                        {% if order.status == 'completed' %}
+                        <button onclick="reorder({{ order.id }}, this)" class="px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:bg-accentDark transition">
+                            <i class="fas fa-redo"></i> Đặt lại
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if orders.pages > 1 %}
+        <div class="p-4 border-t border-gray-100 flex justify-center">
+            <div class="flex gap-2">
+                {% if orders.has_prev %}
+                <a href="{{ url_for('shop.order_history', page=orders.prev_num, status=status) }}" class="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">‹</a>
+                {% endif %}
+                {% for page in orders.iter_pages() %}
+                    {% if page %}
+                    <a href="{{ url_for('shop.order_history', page=page, status=status) }}" class="px-3 py-2 rounded-lg {% if page == orders.page %}bg-primary text-white{% else %}border border-gray-200 hover:bg-gray-50{% endif %}">{{ page }}</a>
+                    {% elif page is not none %}
+                    <span class="px-3 py-2 text-gray-400">...</span>
+                    {% endif %}
+                {% endfor %}
+                {% if orders.has_next %}
+                <a href="{{ url_for('shop.order_history', page=orders.next_num, status=status) }}" class="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">›</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
+        <i class="fas fa-receipt text-5xl text-gray-300 mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">
+            {% if status %}Không có đơn hàng nào{% else %}Bạn chưa có đơn hàng{% endif %}
+        </h3>
+        <p class="text-gray-500 mb-4">
+            {% if status %}Thử xem tất cả đơn hàng hoặc mua sắm thêm.{% else %}Bắt đầu mua sắm ngay hôm nay!{% endif %}
+        </p>
+        <div class="flex gap-3 justify-center">
+            {% if status %}
+            <a href="{{ url_for('shop.order_history') }}" class="px-5 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">Xem tất cả</a>
+            {% endif %}
+            <a href="{{ url_for('shop.catalog') }}" class="px-5 py-2 bg-primary text-white rounded-lg hover:bg-primaryDark">Mua sắm ngay</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    async function reorder(orderId, btn) {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/shop/orders/${orderId}/reorder`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrf() }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('Đã thêm tất cả vào giỏ hàng!', 'success');
+                const badge = document.querySelector('.cart-count');
+                if (badge && data.cart_qty) badge.textContent = data.cart_qty;
+                setTimeout(() => window.location.href = "{{ url_for('shop.cart') }}", 1500);
+            } else {
+                showToast(data.message || 'Có lỗi xảy ra', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        } catch {
+            showToast('Không thể kết nối', 'error');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
+    
+    async function cancelOrder(orderId, btn) {
+        if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/shop/orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrf() }
+            });
+            if (res.ok) {
+                showToast('Đã hủy đơn hàng', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                const data = await res.json();
+                showToast(data.message || 'Không thể hủy đơn hàng', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        } catch {
+            showToast('Không thể kết nối', 'error');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

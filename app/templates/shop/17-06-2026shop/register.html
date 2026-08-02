@@ -1,0 +1,136 @@
+<!-- templates/shop/register.html -->
+{% extends "shop/base.html" %}
+
+{% block title %}Đăng ký tài khoản{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary to-primaryDark p-6 text-center">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-user-plus text-white text-2xl"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white">Tạo tài khoản mới</h2>
+            <p class="text-white/80 text-sm mt-1">Đăng ký để trải nghiệm mua sắm tốt hơn</p>
+        </div>
+        
+        <!-- Form -->
+        <div class="p-6">
+            <div class="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700 flex items-start gap-2">
+                <i class="fas fa-info-circle mt-0.5"></i>
+                <span>Email/SĐT trùng với khách hàng ERP sẽ tự động liên kết tài khoản</span>
+            </div>
+            
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                        <input type="tel" name="phone" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+                    <input type="email" name="email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <input type="password" name="password" id="password" required
+                               class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none pr-12">
+                        <button type="button" onclick="togglePassword('password', 'pwIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <i id="pwIcon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="strengthBar" class="h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <p id="strengthText" class="text-xs mt-1"></p>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <input type="password" name="confirm_password" id="confirmPassword" required
+                               class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-accent focus:outline-none pr-12">
+                        <button type="button" onclick="togglePassword('confirmPassword', 'confirmIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <i id="confirmIcon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p id="matchText" class="text-xs mt-1"></p>
+                </div>
+                <button type="submit" class="w-full py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primaryDark transition">
+                    <i class="fas fa-user-plus mr-2"></i>Đăng ký
+                </button>
+            </form>
+            
+            <p class="text-center text-sm text-gray-600 mt-6">
+                Đã có tài khoản?
+                <a href="{{ url_for('shop.login') }}" class="text-accent font-medium hover:underline">Đăng nhập</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword(fieldId, iconId) {
+        const input = document.getElementById(fieldId);
+        const icon = document.getElementById(iconId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Password strength
+    document.getElementById('password')?.addEventListener('input', function() {
+        const pw = this.value;
+        let strength = 0;
+        if (pw.length >= 8) strength++;
+        if (/[A-Z]/.test(pw)) strength++;
+        if (/[0-9]/.test(pw)) strength++;
+        if (/[^a-zA-Z0-9]/.test(pw)) strength++;
+        
+        const bar = document.getElementById('strengthBar');
+        const text = document.getElementById('strengthText');
+        const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+        const labels = ['Yếu', 'Trung bình', 'Khá', 'Mạnh'];
+        
+        bar.style.width = `${strength * 25}%`;
+        bar.className = `h-full transition-all duration-300 rounded-full ${colors[strength - 1] || 'bg-gray-300'}`;
+        text.textContent = strength > 0 ? labels[strength - 1] : '';
+        text.className = `text-xs mt-1 ${strength >= 3 ? 'text-green-600' : strength >= 2 ? 'text-yellow-600' : 'text-gray-500'}`;
+        
+        checkMatch();
+    });
+    
+    // Password match
+    function checkMatch() {
+        const password = document.getElementById('password')?.value || '';
+        const confirm = document.getElementById('confirmPassword')?.value || '';
+        const matchText = document.getElementById('matchText');
+        if (confirm) {
+            if (password === confirm) {
+                matchText.textContent = '✓ Mật khẩu khớp';
+                matchText.className = 'text-xs mt-1 text-green-600';
+            } else {
+                matchText.textContent = '✗ Mật khẩu không khớp';
+                matchText.className = 'text-xs mt-1 text-red-500';
+            }
+        } else {
+            matchText.textContent = '';
+        }
+    }
+    
+    document.getElementById('confirmPassword')?.addEventListener('input', checkMatch);
+</script>
+{% endblock %}

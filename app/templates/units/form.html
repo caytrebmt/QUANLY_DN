@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if unit else 'Thêm' }} đơn vị tính{% endblock %}
+{% block page_title %}<i class="fas fa-ruler me-2"></i>{{ 'Sửa: ' + unit.code if unit else 'Thêm đơn vị tính mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-5">
+  <div class="card">
+    <div class="card-header">Thông tin đơn vị tính</div>
+    <form method="POST">
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Mã ĐVT <span class="text-danger">*</span></label>
+          <input type="text" name="code" class="form-control text-uppercase"
+                 value="{{ unit.code if unit else '' }}"
+                 {% if unit %}readonly{% endif %} required placeholder="VD: CAI, HOP, KG">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Tên đơn vị tính <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control"
+                 value="{{ unit.name if unit else '' }}" required placeholder="VD: Cái, Hộp, Kilogram">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Mô tả</label>
+          <input type="text" name="description" class="form-control"
+                 value="{{ unit.description if unit else '' }}">
+        </div>
+        {% if unit %}
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="is_active"
+                 {{ 'checked' if unit.is_active else '' }}>
+          <label class="form-check-label">Đang hoạt động</label>
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-footer d-flex justify-content-between">
+        <a href="{{ url_for('units.index') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if unit else 'Lưu' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div></div>
+{% endblock %}

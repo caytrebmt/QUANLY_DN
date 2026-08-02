@@ -1,0 +1,194 @@
+{% extends "base.html" %} {% block title %}Chi tiết phiếu xuất {{ stock_out.code
+}}{% endblock %} {% block page_title %}<i
+  class="fas fa-arrow-circle-up me-2 text-primary"
+></i
+>Phiếu xuất: {{ stock_out.code }}{% endblock %} {% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>{{ t('Stock-out detail') }}</span>
+    <div class="d-flex gap-2">
+      {% if (stock_out.status or '')|lower == 'draft' %}
+      <a
+        href="{{ url_for('stock_out.edit', id=stock_out.id) }}"
+        class="btn btn-sm btn-outline-primary"
+      >
+        <i class="fas fa-edit me-1"></i>{{ t('Edit') }}
+      </a>
+      <form
+        method="POST"
+        action="{{ url_for('stock_out.confirm', id=stock_out.id) }}"
+        class="d-inline"
+        onsubmit="return confirm('Xác nhận xuất kho? Không thể hoàn tác!');"
+      >
+        <button class="btn btn-sm btn-success">
+          <i class="fas fa-check me-1"></i>{{ t('confirm') }}
+        </button>
+      </form>
+      <form
+        method="POST"
+        action="{{ url_for('stock_out.cancel', id=stock_out.id) }}"
+        class="d-inline"
+        onsubmit="return confirm('Hủy phiếu này?');"
+      >
+        <button class="btn btn-sm btn-outline-danger">
+          <i class="fas fa-times me-1"></i>{{ t('Cancel') }}
+        </button>
+      </form>
+      {% endif %}
+
+      <button type="button"
+        data-print-url="{{ url_for('stock_out.delivery_note_html', id=stock_out.id) }}"
+        class="btn btn-sm btn-outline-secondary btn-erp-print">
+        <i class="fas fa-truck me-1"></i>Phiếu giao hàng
+      </button>
+
+      <button type="button"
+        data-print-url="{{ url_for('stock_out.print_html', id=stock_out.id) }}"
+        class="btn btn-sm btn-outline-secondary btn-erp-print">
+        <i class="fas fa-print me-1"></i>{{ t('Print PDF') }}
+      </button>
+
+      <a
+        href="{{ url_for('stock_out.index') }}"
+        class="btn btn-sm btn-outline-secondary"
+      >
+        <i class="fas fa-arrow-left me-1"></i>{{ t('Back') }}
+      </a>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <small class="text-muted">{{ t('Code') }}</small>
+        <div class="fw-bold">{{ stock_out.code }}</div>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">{{ t('Date') }}</small>
+        <div class="fw-bold">{{ stock_out.date|dateformat }}</div>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">{{ t('Warehouse') }}</small>
+        <div class="fw-bold">
+          {{ stock_out.warehouse.name if stock_out.warehouse else '-' }}
+        </div>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">{{ t('Status') }}</small>
+        <div>
+          <span class="badge badge-{{ (stock_out.status or '')|lower }} fs-6">
+            {{ stock_out.status|status_label }}
+          </span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">Cách tính VAT</small>
+        <div>
+          {% if stock_out.vat_mode == 'grouped' %}
+          <span class="badge bg-info"
+            >VAT gộp ({{ stock_out.vat_rate_grouped }}%)</span
+          >
+          {% else %}
+          <span class="badge bg-secondary">Theo sản phẩm</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <small class="text-muted">{{ t('Customer') }}</small>
+        <div class="fw-bold">
+          {{ stock_out.customer.name if stock_out.customer else '-' }}
+        </div>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">{{ t('Customer tax code') }}</small>
+        <div>
+          {{ stock_out.customer.tax_code if stock_out.customer else '-' }}
+        </div>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">{{ t('Invoice no.') }}</small>
+        <div>{{ stock_out.invoice_no or '-' }}</div>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-erp mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Mã hàng</th>
+            <th>Tên hàng hóa</th>
+            <th>ĐVT</th>
+            <th class="text-end">Số lượng</th>
+            <th class="text-end">Đơn giá</th>
+            <th class="text-end">Thành tiền</th>
+            {% if stock_out.vat_mode != 'grouped' %}
+            <th class="text-center">VAT%</th>
+            <th class="text-end">Tiền VAT</th>
+            <th class="text-end">Tổng cộng</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% set list_items = items if items is defined else stock_out.items %}
+          {% set qty_map = qty_display_map if qty_display_map is defined else {}
+          %} {% for item in list_items %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>
+              <code>{{ item.product.code if item.product else '' }}</code>
+            </td>
+            <td>{{ item.product.name if item.product else '' }}</td>
+            <td>
+              {{ item.unit.name if item.unit else (item.product.get_unit_name()
+              if item.product else '') }}
+            </td>
+            <td class="text-end">{{ item.quantity|qty_vn }}</td>
+            <td class="text-end">{{ item.unit_price|currency }}</td>
+            <td class="text-end">{{ item.amount|currency }}</td>
+            {% if stock_out.vat_mode != 'grouped' %}
+            <td class="text-center">
+              <span class="badge bg-info">{{ item.vat_rate|number(0) }}%</span>
+            </td>
+            <td class="text-end text-info">{{ item.vat_amount|currency }}</td>
+            <td class="text-end fw-bold">{{ item.total_amount|currency }}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="6" class="text-end">Tổng cộng:</td>
+            <td class="text-end">{{ stock_out.subtotal|currency }}</td>
+            {% if stock_out.vat_mode != 'grouped' %}
+            <td></td>
+            <td class="text-end text-info">
+              {{ stock_out.vat_amount|currency }}
+            </td>
+            <td class="text-end text-primary fs-6">
+              {{ stock_out.total_amount|currency }}
+            </td>
+            {% endif %}
+          </tr>
+          {% if stock_out.vat_mode == 'grouped' %}
+          <tr>
+            <td colspan="6" class="text-end">
+              Thuế GTGT ({{ stock_out.vat_rate_grouped }}%):
+            </td>
+            <td class="text-end text-info">
+              {{ stock_out.vat_amount|currency }}
+            </td>
+          </tr>
+          <tr>
+            <td colspan="6" class="text-end text-primary fs-6">
+              TỔNG THANH TOÁN:
+            </td>
+            <td class="text-end text-primary fs-6">
+              {{ stock_out.total_amount|currency }}
+            </td>
+          </tr>
+          {% endif %}
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

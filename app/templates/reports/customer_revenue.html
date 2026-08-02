@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Doanh thu theo khách hàng{% endblock %}
+{% block page_title %}<i class="fas fa-chart-bar me-2"></i>Báo cáo doanh thu theo khách hàng{% endblock %}
+{% block content %}
+<!-- Summary KPIs -->
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="kpi-card" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">
+      <div class="d-flex justify-content-between">
+        <div>
+          <div class="kpi-label">Tổng doanh thu kỳ</div>
+          <div class="kpi-value">{{ total_revenue|currency }}</div>
+          <div class="small opacity-75">VND</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="kpi-card" style="background:linear-gradient(135deg,#b45309,#f59e0b)">
+      <div class="d-flex justify-content-between">
+        <div>
+          <div class="kpi-label">Tổng công nợ KH</div>
+          <div class="kpi-value">{{ total_debt|currency }}</div>
+          <div class="small opacity-75">VND</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-hand-holding-usd"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="kpi-card" style="background:linear-gradient(135deg,#065f46,#10b981)">
+      <div class="d-flex justify-content-between">
+        <div>
+          <div class="kpi-label">Số khách hàng có DT</div>
+          <div class="kpi-value">{{ rows|length }}</div>
+          <div class="small opacity-75">khách hàng</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-users"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Chi tiết doanh thu từng khách hàng</span>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-2"><label class="form-label small">Từ ngày</label>
+        <input type="date" name="from_date" value="{{ from_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2"><label class="form-label small">Đến ngày</label>
+        <input type="date" name="to_date" value="{{ to_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-4"><label class="form-label small">Khách hàng</label>
+        <select name="customer_id" class="form-select form-select-sm select2">
+          <option value="">-- Tất cả KH --</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}" {{ 'selected' if customer_id and customer_id==c.id|string }}>{{ c.code }} - {{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto d-flex align-items-end">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Xem</button>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Mã KH</th><th>Tên khách hàng</th><th>Loại KH</th>
+            <th class="text-center">Số đơn</th>
+            <th class="text-end">Tiền hàng</th>
+            <th class="text-end">Tiền VAT</th>
+            <th class="text-end">CK</th>
+            <th class="text-end">Tổng DT</th>
+            <th class="text-end">Đã TT</th>
+            <th class="text-end">Còn nợ</th>
+            <th class="text-center no-print">Chi tiết</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td><code>{{ r.customer.code }}</code></td>
+            <td class="fw-semibold">
+              <a href="{{ url_for('reports.customer_detail', customer_id=r.customer.id, from_date=from_date, to_date=to_date) }}">
+                {{ r.customer.name }}
+              </a>
+            </td>
+            <td>
+              <span class="badge {% if r.customer.customer_type=='wholesale' %}bg-primary{% elif r.customer.customer_type=='agent' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ {'retail':'Bán lẻ','wholesale':'Bán buôn','agent':'Đại lý'}.get(r.customer.customer_type,'') }}
+              </span>
+            </td>
+            <td class="text-center"><span class="badge bg-info">{{ r.order_count }}</span></td>
+            <td class="text-end">{{ r.subtotal|currency }}</td>
+            <td class="text-end text-info">{{ r.vat|currency }}</td>
+            <td class="text-end text-muted">{{ r.discount|currency if r.discount > 0 else '-' }}</td>
+            <td class="text-end fw-bold text-primary">{{ r.total|currency }}</td>
+            <td class="text-end text-success">{{ r.paid|currency }}</td>
+            <td class="text-end {% if r.debt > 0 %}text-warning fw-bold{% endif %}">
+              {{ r.debt|currency if r.debt > 0 else '-' }}
+            </td>
+            <td class="text-center no-print">
+              <a href="{{ url_for('reports.customer_detail', customer_id=r.customer.id, from_date=from_date, to_date=to_date) }}"
+                 class="btn btn-sm btn-outline-primary py-0 px-2">
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="11" class="text-center text-muted py-4">Không có dữ liệu doanh thu</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if rows %}
+        <tfoot class="table-dark fw-bold">
+          <tr>
+            <td colspan="4" class="text-end">Tổng:</td>
+            <td class="text-end">{{ rows|sum(attribute='subtotal')|currency }}</td>
+            <td class="text-end">{{ rows|sum(attribute='vat')|currency }}</td>
+            <td class="text-end">{{ rows|sum(attribute='discount')|currency }}</td>
+            <td class="text-end text-warning">{{ rows|sum(attribute='total')|currency }}</td>
+            <td class="text-end">{{ rows|sum(attribute='paid')|currency }}</td>
+            <td class="text-end text-warning">{{ rows|sum(attribute='debt')|currency }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>$(function(){ $('.select2').select2({theme:'bootstrap-5',width:'100%'}); });</script>
+{% endblock %}

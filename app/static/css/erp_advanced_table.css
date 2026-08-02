@@ -1,0 +1,349 @@
+/* Khối bọc ngoài do JS tự sinh ra */
+.erp-advanced-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Thanh công cụ nằm cố định ở trên, không tham gia vào luồng cuộn */
+.erp-advanced-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  /*padding: 8px 12px;*/
+  background: #1e2535;
+  border: 1px solid #344253;
+  border-bottom: none;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Khối chứa bảng có sẵn trong HTML - biến nó thành khung cuộn chuẩn */
+.erp-advanced-wrap .table-responsive {
+  max-height: min(68vh, 680px) !important; /* Giới hạn chiều cao để kích hoạt thanh cuộn dọc */
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  border: 1px solid #344253 !important;
+  position: relative; /* Bắt buộc để làm mỏ neo cho sticky */
+}
+
+/* Tiêu đề bảng dính chặt lên đỉnh của .table-responsive khi cuộn dọc */
+.erp-advanced-wrap .table-responsive table thead th {
+  position: sticky !important;
+  top: 0 !important; /* Dính đúng mép đỉnh của khung cuộn table-responsive */
+  z-index: 10 !important;
+  background-color: #2d3748 !important; /* Màu xanh nền tiêu đề trùng với ảnh của bạn */
+  color: #ffffff !important;
+}
+
+/* Nếu bật bộ lọc từng cột, hàng lọc này dính ngay sát dưới hàng tiêu đề chính */
+.erp-advanced-wrap .table-responsive .erp-column-filter-row th {
+  position: sticky !important;
+  top: 35px !important; /* Khoảng cách vừa bằng chiều cao của hàng tiêu đề trên */
+  z-index: 9 !important;
+  background-color: #f8fafc !important;
+}
+
+.erp-advanced-left,
+.erp-advanced-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.erp-advanced-search {
+  width: min(300px, 64vw);
+  height: 32px;
+  border: 1px solid #344253;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.erp-advanced-search:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.erp-advanced-size {
+  height: 32px;
+  border: 1px solid #344253;
+  border-radius: 6px;
+  padding: 0 6px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.erp-advanced-info {
+  color: #475569;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.erp-advanced-reset {
+  height: 32px;
+  border: 1px solid #344253;
+  border-radius: 6px;
+  background: #2a4157;
+  color: #ef4444;
+  font-weight: 500;
+  padding: 0 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.erp-advanced-reset:hover {
+  background: #2c4374;
+  border-color: #fca5a5;
+}
+
+.erp-advanced-btn {
+  height: 32px;
+  border: 1px solid #344253;
+  border-radius: 6px;
+  background: #344253;
+  color: #d8dfe7;
+  padding: 0 10px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.erp-advanced-btn:hover,
+.erp-advanced-btn.active {
+  background: #345177;
+  border-color: #344253;
+  color: #a3afc9;
+}
+
+.erp-column-menu-wrap {
+  position: relative;
+}
+
+.erp-column-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+}
+
+.erp-column-menu.open {
+  display: block;
+}
+
+.erp-column-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: #334155;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.erp-column-option:hover {
+  background: #f1f5f9;
+}
+
+.erp-column-filter-row th {
+  background: #f8fafc !important;
+  padding: 6px !important;
+  position: sticky !important;
+  top: 32px !important;
+  z-index: 19 !important;
+}
+
+.erp-column-filter {
+  width: 100%;
+  min-width: 80px;
+  height: 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 0 8px;
+  font-size: 12px;
+  outline: none;
+  background: #fff;
+}
+
+.erp-column-filter:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.erp-sortable th[data-erp-sort] {
+  cursor: pointer;
+  position: relative;
+  padding-right: 22px !important;
+  user-select: none;
+}
+
+.erp-sortable th[data-erp-sort]::after {
+  content: "↕";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.35;
+  font-size: 11px;
+}
+
+.erp-sortable th[data-erp-sort-dir="asc"]::after {
+  content: "↑";
+  opacity: 0.9;
+  color: #3b82f6;
+}
+
+.erp-sortable th[data-erp-sort-dir="desc"]::after {
+  content: "↓";
+  opacity: 0.9;
+  color: #3b82f6;
+}
+/* Đảm bảo wrapper chính là một khối thống nhất */
+.erp-advanced-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Tránh tràn ngoài ý muốn */
+}
+
+.erp-advanced-wrap .table-responsive {
+  max-height: min(72vh, 760px);
+  overflow-y: auto;
+  position: relative; /* Tạo context chuẩn cho position: sticky */
+  border: 1px solid #e2e8f0;
+}
+
+.table-responsive thead th {
+position: sticky;
+  top: 0; /* Giữ đỉnh bảng dính đúng mép trên của table-responsive */
+  z-index: 20;
+  background: #313853; /* Sử dụng màu nền tối trùng với màu bảng của bạn */
+}
+
+/* Điều chỉnh lại hàng bộ lọc cột (nếu bật) để nó dính ngay dưới hàng tiêu đề chính */
+.erp-column-filter-row th {
+  position: sticky !important;
+  top: 32px !important; /* Đẩy xuống một khoảng bằng chiều cao của hàng tiêu đề chính */
+  z-index: 19 !important;
+}
+
+.erp-advanced-empty td {
+  padding: 30px !important;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.erp-row-detail td {
+  padding: 12px 16px !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+.erp-row-detail-content {
+  min-height: 60px;
+}
+
+.erp-row-expanded > td {
+  background: #f1f5f9 !important;
+}
+
+.erp-sortable tbody tr[data-expandable="true"] {
+  cursor: pointer;
+}
+
+.erp-sortable tbody tr[data-expandable="true"]:hover {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+@media (max-width: 768px) {
+  .erp-advanced-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .erp-advanced-left,
+  .erp-advanced-right,
+  .erp-advanced-search {
+    width: 100%;
+  }
+  .erp-advanced-right {
+    justify-content: space-between;
+  }
+  .erp-column-menu-wrap,
+  .erp-advanced-btn {
+    width: 100%;
+  }
+  .erp-column-menu {
+    width: 100%;
+  }
+}
+
+/* Column resize handle */
+.erp-advanced-wrap .table-responsive th {
+  position: relative;
+}
+
+.erp-col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.erp-col-resize-handle:hover,
+.erp-col-resize-handle.erp-resizing {
+  background: #3b82f6;
+}
+
+.erp-advanced-wrap.table-resizing {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.erp-advanced-wrap.table-resizing th {
+  pointer-events: none;
+}
+
+.erp-advanced-wrap.table-resizing .erp-col-resize-handle {
+  pointer-events: auto;
+}
+
+/* Server-side mode indicators */
+.erp-advanced-wrap .erp-advanced-loading {
+  padding: 12px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.erp-advanced-wrap .erp-advanced-error {
+  padding: 12px;
+  text-align: center;
+  color: #ef4444;
+  font-size: 13px;
+}

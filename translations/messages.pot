@@ -1,0 +1,477 @@
+# Translations for ERPACC
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the ERPACC project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ERPACC\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-21 17:21+0000\n"
+"PO-Revision-Date: 2026-07-21 17:21+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: vi\n"
+"Language-Team: vi <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: manage_translations.py\n"
+
+msgid "Accepted"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "All customers"
+msgstr ""
+
+msgid "All status"
+msgstr ""
+
+msgid "All suppliers"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Backup / Restore DB"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Cancelled stock-in %(code)s."
+msgstr ""
+
+msgid "Cancelled stock-out %(code)s."
+msgstr ""
+
+msgid "Code"
+msgstr ""
+
+msgid "Confirmed"
+msgstr ""
+
+msgid "Confirmed stock-in %(code)s. Inventory updated."
+msgstr ""
+
+msgid "Confirmed stock-out %(code)s successfully!"
+msgstr ""
+
+msgid "Converted"
+msgstr ""
+
+msgid "Create"
+msgstr ""
+
+msgid "Created stock-in %(code)s successfully!"
+msgstr ""
+
+msgid "Created stock-out %(code)s successfully!"
+msgstr ""
+
+msgid "Customer"
+msgstr ""
+
+msgid "Customer tax code"
+msgstr ""
+
+msgid "Dashboard"
+msgstr ""
+
+msgid "Date"
+msgstr ""
+
+msgid "Display name"
+msgstr ""
+
+msgid "Draft"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "Error cancelling"
+msgstr ""
+
+msgid "Error confirming"
+msgstr ""
+
+msgid "Error: %(err)s"
+msgstr ""
+
+msgid "Export Excel"
+msgstr ""
+
+msgid "Filter code or invoice"
+msgstr ""
+
+msgid "General settings"
+msgstr ""
+
+msgid "Invoice no."
+msgstr ""
+
+msgid "Menu code"
+msgstr ""
+
+msgid "Menu settings"
+msgstr ""
+
+msgid "Notification templates"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Paid"
+msgstr ""
+
+msgid "Partial"
+msgstr ""
+
+msgid "Please add at least one valid item!"
+msgstr ""
+
+msgid "Please select warehouse!"
+msgstr ""
+
+msgid "Print PDF"
+msgstr ""
+
+msgid "Quản lý users"
+msgstr ""
+
+msgid "Sent"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Stock-in detail"
+msgstr ""
+
+msgid "Stock-in list"
+msgstr ""
+
+msgid "Stock-out detail"
+msgstr ""
+
+msgid "Stock-out list"
+msgstr ""
+
+msgid "Subtotal"
+msgstr ""
+
+msgid "Supplier"
+msgstr ""
+
+msgid "Supplier invoice no."
+msgstr ""
+
+msgid "Tiếng Việt"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Updated stock-in %(code)s successfully!"
+msgstr ""
+
+msgid "Updated stock-out %(code)s successfully!"
+msgstr ""
+
+msgid "Users management"
+msgstr ""
+
+msgid "VAT"
+msgstr ""
+
+msgid "Warehouse"
+msgstr ""
+
+msgid "accounting.account_mapping"
+msgstr ""
+
+msgid "accounting.accounts"
+msgstr ""
+
+msgid "accounting.balance_sheet"
+msgstr ""
+
+msgid "accounting.create_account"
+msgstr ""
+
+msgid "accounting.export_health_check_excel"
+msgstr ""
+
+msgid "accounting.export_health_check_pdf"
+msgstr ""
+
+msgid "accounting.health_check"
+msgstr ""
+
+msgid "accounting.income_statement"
+msgstr ""
+
+msgid "accounting.index"
+msgstr ""
+
+msgid "accounting.trial_balance"
+msgstr ""
+
+msgid "auth.change_password"
+msgstr ""
+
+msgid "auth.logout"
+msgstr ""
+
+msgid "categories.create"
+msgstr ""
+
+msgid "categories.index"
+msgstr ""
+
+msgid "company.index"
+msgstr ""
+
+msgid "confirm"
+msgstr ""
+
+msgid "customers.create"
+msgstr ""
+
+msgid "customers.download_template"
+msgstr ""
+
+msgid "customers.export_excel"
+msgstr ""
+
+msgid "customers.import_excel"
+msgstr ""
+
+msgid "customers.index"
+msgstr ""
+
+msgid "dashboard.index"
+msgstr ""
+
+msgid "debt.summary"
+msgstr ""
+
+msgid "ecommerce.ensure_listings"
+msgstr ""
+
+msgid "ecommerce.listings"
+msgstr ""
+
+msgid "ecommerce.orders"
+msgstr ""
+
+msgid "ecommerce.sync_inventory"
+msgstr ""
+
+msgid "inventory.export_excel"
+msgstr ""
+
+msgid "inventory.export_pdf"
+msgstr ""
+
+msgid "inventory.history"
+msgstr ""
+
+msgid "inventory.index"
+msgstr ""
+
+msgid "opening_stock.create"
+msgstr ""
+
+msgid "opening_stock.download_template"
+msgstr ""
+
+msgid "opening_stock.import_excel"
+msgstr ""
+
+msgid "opening_stock.index"
+msgstr ""
+
+msgid "opening_stock.post_all"
+msgstr ""
+
+msgid "products.create"
+msgstr ""
+
+msgid "products.download_template"
+msgstr ""
+
+msgid "products.export_excel"
+msgstr ""
+
+msgid "products.import_excel"
+msgstr ""
+
+msgid "products.index"
+msgstr ""
+
+msgid "products.quick_create_product"
+msgstr ""
+
+msgid "quotations.create"
+msgstr ""
+
+msgid "quotations.index"
+msgstr ""
+
+msgid "random"
+msgstr ""
+
+msgid "reports.customer_revenue"
+msgstr ""
+
+msgid "reports.stock_movement"
+msgstr ""
+
+msgid "settings.backup.db_backup"
+msgstr ""
+
+msgid "settings.backup.db_restore"
+msgstr ""
+
+msgid "settings.backup.db_tools"
+msgstr ""
+
+msgid "settings.backup.db_verify"
+msgstr ""
+
+msgid "settings.menus.create_menu"
+msgstr ""
+
+msgid "settings.menus.menus"
+msgstr ""
+
+msgid "settings.notifications.create_notification"
+msgstr ""
+
+msgid "settings.notifications.notifications_list"
+msgstr ""
+
+msgid "settings.system.create_unit_conversion"
+msgstr ""
+
+msgid "settings.system.index"
+msgstr ""
+
+msgid "settings.system.save"
+msgstr ""
+
+msgid "settings.system.unit_conversions"
+msgstr ""
+
+msgid "settings.users.create_user"
+msgstr ""
+
+msgid "settings.users.users_list"
+msgstr ""
+
+msgid "shop.account"
+msgstr ""
+
+msgid "shop.cart"
+msgstr ""
+
+msgid "shop.catalog"
+msgstr ""
+
+msgid "shop.change_password"
+msgstr ""
+
+msgid "shop.checkout"
+msgstr ""
+
+msgid "shop.login"
+msgstr ""
+
+msgid "shop.logout"
+msgstr ""
+
+msgid "shop.order_history"
+msgstr ""
+
+msgid "shop.register"
+msgstr ""
+
+msgid "shop.track_order"
+msgstr ""
+
+msgid "shop.update_cart"
+msgstr ""
+
+msgid "shop.update_profile"
+msgstr ""
+
+msgid "stock_in.create"
+msgstr ""
+
+msgid "stock_in.export_excel"
+msgstr ""
+
+msgid "stock_in.index"
+msgstr ""
+
+msgid "stock_out.create"
+msgstr ""
+
+msgid "stock_out.export_excel"
+msgstr ""
+
+msgid "stock_out.index"
+msgstr ""
+
+msgid "stocktaking.create"
+msgstr ""
+
+msgid "stocktaking.index"
+msgstr ""
+
+msgid "suppliers.create"
+msgstr ""
+
+msgid "suppliers.download_template"
+msgstr ""
+
+msgid "suppliers.export_excel"
+msgstr ""
+
+msgid "suppliers.import_excel"
+msgstr ""
+
+msgid "suppliers.index"
+msgstr ""
+
+msgid "units.create"
+msgstr ""
+
+msgid "units.index"
+msgstr ""
+
+msgid "warehouses.create"
+msgstr ""
+
+msgid "warehouses.index"
+msgstr ""
+
+msgid "Đăng xuất"
+msgstr ""
+
+msgid "Đổi mật khẩu"
+msgstr ""

@@ -1,0 +1,210 @@
+# English translations for ERPACC.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the ERPACC project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ERPACC\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-22 00:00+0700\n"
+"PO-Revision-Date: 2026-07-22 00:00+0700\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "Accepted"
+msgstr "Accepted"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "All customers"
+msgstr "All customers"
+
+msgid "All status"
+msgstr "All status"
+
+msgid "All suppliers"
+msgstr "All suppliers"
+
+msgid "Back"
+msgstr "Back"
+
+msgid "Backup / Restore DB"
+msgstr "Backup / Restore database"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Cancelled"
+msgstr "Cancelled"
+
+msgid "Cancelled stock-in %(code)s."
+msgstr "Stock-in %(code)s has been cancelled."
+
+msgid "Cancelled stock-out %(code)s."
+msgstr "Stock-out %(code)s has been cancelled."
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Confirmed"
+msgstr "Confirmed"
+
+msgid "Confirmed stock-in %(code)s. Inventory updated."
+msgstr "Stock-in %(code)s confirmed. Inventory updated."
+
+msgid "Confirmed stock-out %(code)s successfully!"
+msgstr "Stock-out %(code)s confirmed successfully!"
+
+msgid "Converted"
+msgstr "Converted"
+
+msgid "Create"
+msgstr "Create"
+
+msgid "Created stock-in %(code)s successfully!"
+msgstr "Stock-in %(code)s created successfully!"
+
+msgid "Created stock-out %(code)s successfully!"
+msgstr "Stock-out %(code)s created successfully!"
+
+msgid "Customer"
+msgstr "Customer"
+
+msgid "Customer tax code"
+msgstr "Customer tax code"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Display name"
+msgstr "Display name"
+
+msgid "Draft"
+msgstr "Draft"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "English"
+msgstr "English"
+
+msgid "Error cancelling"
+msgstr "Error cancelling"
+
+msgid "Error confirming"
+msgstr "Error confirming"
+
+msgid "Error: %(err)s"
+msgstr "Error: %(err)s"
+
+msgid "Export Excel"
+msgstr "Export Excel"
+
+msgid "Filter code or invoice"
+msgstr "Filter code or invoice"
+
+msgid "From date"
+msgstr "From date"
+
+msgid "General settings"
+msgstr "General settings"
+
+msgid "Invoice no."
+msgstr "Invoice no."
+
+msgid "Menu code"
+msgstr "Menu code"
+
+msgid "Menu settings"
+msgstr "Menu settings"
+
+msgid "Notification templates"
+msgstr "Notification templates"
+
+msgid "Open"
+msgstr "Open"
+
+msgid "Paid"
+msgstr "Paid"
+
+msgid "Partial"
+msgstr "Partial"
+
+msgid "Please add at least one valid item!"
+msgstr "Please add at least one valid item!"
+
+msgid "Please select warehouse!"
+msgstr "Please select warehouse!"
+
+msgid "Print PDF"
+msgstr "Print PDF"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Stock-in detail"
+msgstr "Stock-in detail"
+
+msgid "Stock-in list"
+msgstr "Stock-in list"
+
+msgid "Stock-out detail"
+msgstr "Stock-out detail"
+
+msgid "Stock-out list"
+msgstr "Stock-out list"
+
+msgid "Subtotal"
+msgstr "Subtotal"
+
+msgid "Supplier"
+msgstr "Supplier"
+
+msgid "Supplier invoice no."
+msgstr "Supplier invoice no."
+
+msgid "To date"
+msgstr "To date"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "VAT"
+msgstr "VAT"
+
+msgid "Voucher has no item, cannot confirm!"
+msgstr "Voucher has no items, cannot confirm!"
+
+msgid "Warehouse"
+msgstr "Warehouse"
+
+msgid "This voucher was already confirmed!"
+msgstr "This voucher was already confirmed!"
+
+msgid "Posting failed: %(err)s"
+msgstr "Posting failed: %(err)s"
+
+msgid "Updated stock-in %(code)s successfully!"
+msgstr "Stock-in %(code)s updated successfully!"
+
+msgid "Updated stock-out %(code)s successfully!"
+msgstr "Stock-out %(code)s updated successfully!"
+
+msgid "Reverse entry failed: %(err)s"
+msgstr "Reverse entry failed: %(err)s"
+
+msgid "Users management"
+msgstr "Users management"
+
+msgid "Source"
+msgstr "Source"

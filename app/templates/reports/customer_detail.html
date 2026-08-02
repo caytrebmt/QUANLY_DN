@@ -1,0 +1,195 @@
+{% extends "base.html" %} {% block title %}Chi tiết KH {{ customer.name }}{%
+endblock %} {% block page_title %}<i class="fas fa-user me-2"></i>Chi tiết mua
+hàng: {{ customer.name }}{% endblock %} {% block content %}
+<div class="row g-3 mb-3">
+  <!-- Customer Info Card -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="fas fa-id-card me-2"></i>Thông tin khách hàng
+      </div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <tr>
+            <th>Mã KH</th>
+            <td><code>{{ customer.code }}</code></td>
+          </tr>
+          <tr>
+            <th>Tên</th>
+            <td class="fw-bold">{{ customer.name }}</td>
+          </tr>
+          <tr>
+            <th>Địa chỉ</th>
+            <td>{{ customer.address or '-' }}</td>
+          </tr>
+          <tr>
+            <th>Điện thoại</th>
+            <td>{{ customer.phone or '-' }}</td>
+          </tr>
+          <tr>
+            <th>MST</th>
+            <td>{{ customer.tax_code or '-' }}</td>
+          </tr>
+          <tr>
+            <th>Hạn mức CN</th>
+            <td>{{ customer.credit_limit|currency }}</td>
+          </tr>
+          <tr>
+            <th>Tổng CN hiện tại</th>
+            <td class="{{ 'text-danger fw-bold' if total_debt > 0 else '' }}">
+              {{ total_debt|currency }} VND
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue Summary -->
+  <div class="col-md-8">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="card text-center py-3">
+          <div class="text-primary fs-3 mb-1">
+            <i class="fas fa-file-invoice"></i>
+          </div>
+          <div class="fw-bold fs-5">{{ orders.total if orders else 0 }}</div>
+          <div class="text-muted small">Đơn hàng trong kỳ</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center py-3">
+          <div class="text-success fs-3 mb-1">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="fw-bold fs-5">{{ total_revenue|currency }}</div>
+          <div class="text-muted small">Tổng doanh thu tất cả thời gian</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center py-3">
+          <div class="text-warning fs-3 mb-1"><i class="fas fa-star"></i></div>
+          <div class="fw-bold fs-5">{{ total_orders }}</div>
+          <div class="text-muted small">Tổng đơn hàng (tất cả)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top products -->
+    <div class="card mt-3">
+      <div class="card-header small fw-bold">
+        <i class="fas fa-fire me-1 text-danger"></i>Top 10 hàng hóa đã mua (kỳ
+        này)
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Mã HH</th>
+              <th>Tên hàng</th>
+              <th class="text-center">Đơn</th>
+              <th class="text-end">SL</th>
+              <th class="text-end">Doanh thu</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in top_products %}
+            <tr>
+              <td><code>{{ p.code }}</code></td>
+              <td>{{ (p.name or '')[:30] }}</td>
+              <td class="text-center">
+                <span class="badge bg-info">{{ p.order_count }}</span>
+              </td>
+              <td class="text-end">{{ p.total_qty|float|round(2) }}</td>
+              <td class="text-end fw-bold">{{ p.total_amt|currency }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Orders list -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span
+      ><i class="fas fa-list me-2"></i>Danh sách đơn hàng kỳ : {{ from_date }} →
+      {{ to_date }}</span
+    >
+    <a
+      href="{{ url_for('reports.customer_revenue') }}"
+      class="btn btn-sm btn-outline-secondary"
+    >
+      <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Số phiếu</th>
+            <th>Ngày</th>
+            <th>Kho</th>
+            <th class="text-end">Tiền hàng</th>
+            <th class="text-end">VAT</th>
+            <th class="text-end">Tổng TT</th>
+            <th class="text-end">Đã TT</th>
+            <th class="text-end">Còn lại</th>
+            <th class="text-center">TT</th>
+            <th class="no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if orders and orders.items %} {% for so in orders.items %}
+          <tr>
+            <td>
+              <a
+                href="{{ url_for('stock_out.detail', id=so.id) }}"
+                class="fw-semibold"
+                >{{ so.code }}</a
+              >
+            </td>
+            <td>{{ so.date|dateformat }}</td>
+            <td>{{ so.warehouse.name if so.warehouse else '-' }}</td>
+            <td class="text-end">{{ so.subtotal|currency }}</td>
+            <td class="text-end text-info">{{ so.vat_amount|currency }}</td>
+            <td class="text-end fw-bold text-primary">
+              {{ so.total_amount|currency }}
+            </td>
+            <td class="text-end text-success">{{ so.paid_amount|currency }}</td>
+            {% set balance = (so.total_amount or 0) - (so.paid_amount or 0) %}
+            <td
+              class="text-end {{ 'text-danger fw-bold' if balance > 0 else '' }}"
+            >
+              {{ balance|currency if balance > 0 else '-' }}
+            </td>
+            <td class="text-center">
+              <span class="badge badge-{{ so.status }}">
+                {{ {'confirmed':'Đã xác nhận'}.get(so.status, so.status) }}
+              </span>
+            </td>
+            <td class="no-print">
+              <a
+                href="{{ url_for('stock_out.detail', id=so.id) }}"
+                class="btn btn-sm btn-outline-info py-0 px-2"
+              >
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %} {% else %}
+          <tr>
+            <td colspan="10" class="text-center text-muted py-3">
+              Không có đơn hàng trong kỳ này
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

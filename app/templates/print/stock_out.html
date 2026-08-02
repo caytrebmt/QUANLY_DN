@@ -1,0 +1,148 @@
+{% extends "print/base_print.html" %}
+{% block body %}
+<style>
+  .doc-wrap { font-size: 13px; line-height: 1.25; }
+  .head-legal { font-size: 12px; text-align: right; }
+  .italic { font-style: italic; }
+  .center-title { text-align: center; margin-top: 6px; }
+  .center-title .main { font-size: 17px; font-weight: 700; text-transform: uppercase; }
+  .center-title .sub { font-size: 13px; margin-top: 2px; }
+  .accounting-note { float: right; text-align: left; min-width: 150px; }
+  .info-line { margin: 1px 0; }
+  .tt133 th, .tt133 td { border: 1px solid #333; padding: 5px 4px; }
+  .tt133 thead th { background: #fff; text-align: center; font-weight: 700; }
+  .tt133 .num { text-align: right; }
+  .tt133 .center { text-align: center; }
+  .tt133 .item-name { padding-left: 4px; }
+  .sum-line { font-weight: 700; }
+  .sum-line td { padding-top: 6px; padding-bottom: 6px; }
+  .sign-4col td { border: none; text-align: center; vertical-align: top; }
+  .sign-4col .cap { font-weight: 700; }
+  .sign-4col .hint { font-style: italic; font-size: 12px; }
+  .sign-space td { height: 42px; }
+  .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+</style>
+
+<div class="doc-wrap">
+  <table class="no-border" style="width:100%;">
+    <tr>
+      <td class="no-border" style="width:62%;">
+        <div class="fw-bold">{{ company.name }}</div>
+        <div>{{ company.address }}</div>
+        <div>MST: {{ company.tax_code }}{% if company.phone %} &nbsp;|&nbsp; ĐT: {{ company.phone }}{% endif %}</div>
+      </td>
+      <td class="no-border head-legal" style="width:38%;">
+        <div><b>Mẫu số: 02-VT</b></div>
+        <div class="italic">(Ban hành theo TT 133/2016/TT-BTC)</div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="center-title">
+    <div class="main">PHIẾU XUẤT KHO</div>
+    <div class="sub italic">
+      Ngày {{ stock_out.date.strftime('%d') if stock_out.date else '' }} tháng {{ stock_out.date.strftime('%m') if stock_out.date else '' }} năm {{ stock_out.date.strftime('%Y') if stock_out.date else '' }}
+    </div>
+    <div class="sub"><b>Số: {{ stock_out.code }}</b></div>
+  </div>
+
+  <div class="accounting-note">
+    <div>Ghi nợ: 632</div>
+    <div>Ghi có: 1561</div>
+  </div>
+
+  <div style="clear:both;"></div>
+  <div class="info-line"><b>Họ tên người nhận:</b> {{ stock_out.customer.name if stock_out.customer else '' }}</div>
+  <div class="info-line"><b>Địa chỉ:</b> {{ stock_out.customer.address if stock_out.customer else '' }}</div>
+  <div class="info-line"><b>Lý do xuất:</b> {{ stock_out.note or '' }}</div>
+  <div class="info-line"><b>Xuất tại kho:</b> {{ stock_out.warehouse.name if stock_out.warehouse else '' }}</div>
+  <div class="info-line"><b>Số HĐ / Ký hiệu:</b> {{ stock_out.invoice_no or '' }} {{ stock_out.invoice_series or '' }}</div>
+
+  <table class="tt133 mt-2">
+    <thead>
+      <tr>
+        <th rowspan="2" style="width:5%;">STT</th>
+        <th rowspan="2" style="width:30%;">Tên vật tư, hàng hóa</th>
+        <th rowspan="2" style="width:10%;">Mã số</th>
+        <th rowspan="2" style="width:8%;">ĐVT</th>
+        <th colspan="2" style="width:18%;">Số lượng</th>
+        <th rowspan="2" style="width:12%;">Đơn giá</th>
+        <th rowspan="2" style="width:17%;">Thành tiền</th>
+      </tr>
+      <tr>
+        <th style="width:9%;">Yêu cầu</th>
+        <th style="width:9%;">Thực xuất</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td class="center">{{ loop.index }}</td>
+        <td class="item-name">{{ item.product.name if item.product else '' }}</td>
+        <td class="center">{{''}}</td>
+        <td class="center">{{ item.unit.name if item.unit else (item.product.get_unit_name() if item.product else '') }}</td>
+        <td class="num">{{ item.quantity|qty_vn }}</td>
+        <td class="num">{{ item.quantity|qty_vn }}</td>
+        <td class="num">{{ item.unit_price|currency }}</td>
+        <td class="num">{{ item.amount|currency }}</td>
+      </tr>
+      {% endfor %}
+      {% set filler_rows = 10 - (items|length) %}
+      {% if filler_rows > 0 %}
+      {% for _ in range(filler_rows) %}
+      <tr>
+        <td class="center">&nbsp;</td>
+        <td class="item-name"></td>
+        <td class="center"></td>
+        <td class="center"></td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num"></td>
+      </tr>
+      {% endfor %}
+      {% endif %}
+      <tr class="sum-line">
+        <td colspan="7" class="num">Cộng tiền hàng</td>
+        <td class="num">{{ stock_out.subtotal|currency }}</td>
+      </tr>
+      {% if (stock_out.vat_amount or 0)|float > 0 %}
+      <tr class="sum-line">
+        <td colspan="7" class="num">Thuế GTGT</td>
+        <td class="num">{{ stock_out.vat_amount|currency }}</td>
+      </tr>
+      {% endif %}
+      <tr class="sum-line">
+        <td colspan="7" class="num">Tổng cộng thanh toán</td>
+        <td class="num">{{ stock_out.total_amount|currency }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="mt-2 avoid-break"><b>Số tiền bằng chữ:</b> <span class="italic">{{ stock_out.total_amount|so_thanh_chu }}</span></div>
+  <div class="mt-1 avoid-break"><b>Kèm theo chứng từ gốc:</b> Hóa đơn VAT điện tử</div>
+
+  <table class="sign-4col mt-3 avoid-break" style="width:100%;">
+    <tr>
+      <td colspan="4" style="text-align:right;">
+        Ngày {{ stock_out.date.strftime('%d') if stock_out.date else '' }} tháng {{ stock_out.date.strftime('%m') if stock_out.date else '' }} năm {{ stock_out.date.strftime('%Y') if stock_out.date else '' }}
+      </td>
+    </tr>
+    <tr>
+      <td class="cap">Người lập phiếu</td>
+      <td class="cap">Người nhận hàng</td>
+      <td class="cap">Thủ kho</td>
+      <td class="cap">Giám đốc</td>
+    </tr>
+    <tr>
+      <td class="hint">(Ký, ghi rõ họ tên)</td>
+      <td class="hint">(Ký, ghi rõ họ tên)</td>
+      <td class="hint">(Ký, ghi rõ họ tên)</td>
+      <td class="hint">(Ký, ghi rõ họ tên, đóng dấu)</td>
+    </tr>
+    <tr class="sign-space">
+      <td></td><td></td><td></td><td></td>
+    </tr>
+  </table>
+</div>
+{% endblock %}

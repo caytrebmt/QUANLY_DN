@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Mapping tài khoản{% endblock %}
+{% block page_title %}<i class="fas fa-link me-2"></i>Mapping tài khoản kế toán{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('accounting.index') }}" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-book me-1"></i>Nhật ký chung
+      </a>
+      <a href="{{ url_for('accounting.accounts') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-sitemap me-1"></i>Hệ thống TK
+      </a>
+      <a href="{{ url_for('accounting.account_mapping') }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-link me-1"></i>Mapping TK
+      </a>
+      <a href="{{ url_for('accounting.health_check') }}" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-heartbeat me-1"></i>Health Check
+      </a>
+    </div>
+  </div>
+
+  <form method="POST">
+    <div class="card-body">
+      <div class="alert alert-info py-2 small">
+        Cấu hình này dùng cho bút toán tự động (phiếu nhập/xuất, thu/chi công nợ). Hệ thống sẽ đọc theo mã bạn chọn ở đây.
+      </div>
+      <div class="table-responsive">
+        <table class="table table-erp mb-0" data-advanced-table="light">
+          <thead>
+            <tr>
+              <th width="60">#</th>
+              <th width="280">Nghiệp vụ</th>
+              <th width="240">Mã tài khoản</th>
+              <th>Tên tài khoản</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, label, hint in fields %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><strong>{{ label }}</strong></td>
+              <td>
+                <select name="{{ key }}" class="form-select form-select-sm" required>
+                  <option value="">-- Chọn tài khoản --</option>
+                  {% for a in accounts %}
+                  <option value="{{ a.code }}" {{ 'selected' if values.get(key)==a.code else '' }}>
+                    {{ a.code }} - {{ a.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                {% set code = values.get(key, '') %}
+                <span class="badge bg-light text-dark border">{{ code or '-' }}</span>
+                <span class="ms-1">{{ code_to_name.get(code, '') }}</span>
+              </td>
+              <td class="small text-muted">{{ hint }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+      <a href="{{ url_for('accounting.index') }}" class="btn btn-outline-secondary">Quay lại</a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save me-1"></i>Lưu mapping
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

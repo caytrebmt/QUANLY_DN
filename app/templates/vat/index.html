@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Quản lý VAT{% endblock %}
+{% block page_title %}<i class="fas fa-percent me-2"></i>Sổ VAT - Bảng kê hóa đơn{% endblock %}
+{% block content %}
+<!-- Summary Cards -->
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="text-danger mb-1 fs-4"><i class="fas fa-arrow-up"></i></div>
+      <div class="fw-bold fs-5 text-danger">{{ vat_output|currency }}</div>
+      <div class="text-muted small">VAT đầu ra tháng {{ month }}/{{ year }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="text-success mb-1 fs-4"><i class="fas fa-arrow-down"></i></div>
+      <div class="fw-bold fs-5 text-success">{{ vat_input|currency }}</div>
+      <div class="text-muted small">VAT đầu vào tháng {{ month }}/{{ year }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="{{ 'text-danger' if vat_net > 0 else 'text-success' }} mb-1 fs-4">
+        <i class="fas fa-balance-scale"></i>
+      </div>
+      <div class="fw-bold fs-5 {{ 'text-danger' if vat_net > 0 else 'text-success' }}">{{ vat_net|currency }}</div>
+      <div class="text-muted small">VAT phải nộp (Đầu ra - Đầu vào)</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="text-info mb-1 fs-4"><i class="fas fa-file-alt"></i></div>
+      <div class="fw-bold fs-5">{{ records.total }}</div>
+      <div class="text-muted small">Số hóa đơn kỳ này</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('vat.index', vat_type='output', month=month, year=year) }}"
+         class="btn btn-sm {{ 'btn-danger' if vat_type=='output' else 'btn-outline-danger' }}">
+        <i class="fas fa-arrow-up me-1"></i>Bảng kê bán ra (Đầu ra)
+      </a>
+      <a href="{{ url_for('vat.index', vat_type='input', month=month, year=year) }}"
+         class="btn btn-sm {{ 'btn-success' if vat_type=='input' else 'btn-outline-success' }}">
+        <i class="fas fa-arrow-down me-1"></i>Bảng kê mua vào (Đầu vào)
+      </a>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('vat.export_excel', vat_type=vat_type, month=month, year=year) }}"
+         class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>Excel
+      </a>
+      <a href="{{ url_for('vat.export_pdf', vat_type=vat_type, month=month, year=year) }}"
+         target="_blank" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-file-pdf me-1"></i>PDF
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <input type="hidden" name="vat_type" value="{{ vat_type }}">
+      <div class="col-md-2">
+        <select name="month" class="form-select form-select-sm">
+          {% for m in range(1, 13) %}
+          <option value="{{ m }}" {{ 'selected' if m==month }}>Tháng {{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="year" class="form-select form-select-sm">
+          {% for y in years %}
+          <option value="{{ y }}" {{ 'selected' if y==year }}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Lọc</button>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>STT</th><th>Ngày HĐ</th><th>Ký hiệu</th><th>Số HĐ</th>
+            <th>Tên đối tác</th><th>MST đối tác</th>
+            <th class="text-end">Tiền hàng</th>
+            <th class="text-center">Thuế suất</th>
+            <th class="text-end">Tiền thuế</th>
+            <th class="text-end">Tổng tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in records.items %}
+          <tr>
+            <td>{{ loop.index + (records.page-1)*30 }}</td>
+            <td>{{ v.date|dateformat }}</td>
+            <td>{{ v.invoice_series or '-' }}</td>
+            <td>{{ v.invoice_no or '-' }}</td>
+            <td>{{ v.partner_name or '-' }}</td>
+            <td>{{ v.partner_tax_code or '-' }}</td>
+            <td class="text-end">{{ v.taxable_amount|currency }}</td>
+            <td class="text-center"><span class="badge bg-info">{{ v.vat_rate|number(0) }}%</span></td>
+            <td class="text-end text-{{ 'danger' if vat_type=='output' else 'success' }}">
+              {{ v.vat_amount|currency }}
+            </td>
+            <td class="text-end fw-bold">{{ v.total_amount|currency }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="text-center text-muted py-4">
+            Không có dữ liệu VAT {{ 'đầu ra' if vat_type=='output' else 'đầu vào' }} tháng {{ month }}/{{ year }}
+          </td></tr>
+          {% endfor %}
+        </tbody>
+        {% if records.items %}
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="6" class="text-end">Tổng cộng:</td>
+            <td class="text-end">{{ total_taxable|currency }}</td>
+            <td></td>
+            <td class="text-end">{{ total_vat|currency }}</td>
+            <td class="text-end text-primary">{{ total_amount|currency }}</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+    {% if records.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ records.total }} hóa đơn</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in records.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==records.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('vat.index', page=page, vat_type=vat_type, month=month, year=year) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if user else 'Tạo' }} người dùng{% endblock %}
+{% block page_title %}<i class="fas fa-user-edit me-2"></i>{{ 'Sửa: ' + user.username if user else 'Tạo người dùng mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-6">
+  <div class="card">
+    <div class="card-header">Thông tin tài khoản</div>
+    <form method="POST">
+      <div class="card-body">
+        <div class="row g-3">
+          {% if not user %}
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+            <input type="text" name="username" class="form-control" required placeholder="Không dấu, không khoảng cách">
+          </div>
+          {% endif %}
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Họ tên đầy đủ <span class="text-danger">*</span></label>
+            <input type="text" name="full_name" class="form-control" value="{{ user.full_name if user else '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="form-control" value="{{ user.email if user else '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Vai trò</label>
+            <select name="role" class="form-select">
+              {% set role_label_map = {
+                'admin':'Quản trị',
+                'accountant':'Kế toán',
+                'warehouse':'Thủ kho',
+                'user':'Người dùng'
+              } %}
+              {% set current_role = (user.role if user else 'user') %}
+              {% for role_val in (role_options if role_options else ['user','accountant','warehouse','admin']) %}
+              <option value="{{ role_val }}" {{ 'selected' if current_role==role_val else '' }}>
+                {{ role_label_map.get(role_val, role_val|capitalize) }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ 'Mật khẩu mới (để trống nếu không đổi)' if user else 'Mật khẩu *' }}</label>
+            <input type="password" name="{{ 'new_password' if user else 'password' }}" class="form-control"
+                   {{ 'required' if not user }} minlength="8" placeholder="Tối thiểu 8 ký tự, có hoa/thường/số/ký tự đặc biệt">
+          </div>
+          {% if user %}
+          <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="is_active"
+                     {{ 'checked' if user.is_active else '' }}>
+              <label class="form-check-label">Tài khoản đang hoạt động</label>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="col-12">
+            <hr class="my-1">
+            <label class="form-label fw-semibold mb-1">Phân quyền CRUD theo module</label>
+            <div class="table-responsive border rounded">
+              <table class="table table-sm mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Module</th>
+                    <th class="text-center">View</th>
+                    <th class="text-center">Add</th>
+                    <th class="text-center">Edit</th>
+                    <th class="text-center">Delete</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for key, label in modules %}
+                  {% set m = perms.get(key, {}) %}
+                  <tr>
+                    <td>{{ label }} <small class="text-muted">({{ key }})</small></td>
+                    <td class="text-center">
+                      <input class="form-check-input" type="checkbox" name="perm_{{ key }}_view" value="1"
+                             {{ 'checked' if user and user.role=='admin' else ('checked' if m.get('view') else '') }}>
+                    </td>
+                    <td class="text-center">
+                      <input class="form-check-input" type="checkbox" name="perm_{{ key }}_add" value="1"
+                             {{ 'checked' if user and user.role=='admin' else ('checked' if m.get('add') else '') }}>
+                    </td>
+                    <td class="text-center">
+                      <input class="form-check-input" type="checkbox" name="perm_{{ key }}_edit" value="1"
+                             {{ 'checked' if user and user.role=='admin' else ('checked' if m.get('edit') else '') }}>
+                    </td>
+                    <td class="text-center">
+                      <input class="form-check-input" type="checkbox" name="perm_{{ key }}_delete" value="1"
+                             {{ 'checked' if user and user.role=='admin' else ('checked' if m.get('delete') else '') }}>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <small class="text-muted">Admin mặc định có full quyền toàn module.</small>
+          </div>
+
+          <div class="col-12">
+            <hr class="my-1">
+            <label class="form-label fw-semibold mb-1">Hiển thị menu theo người dùng (ghi đè theo tài khoản)</label>
+            <div class="table-responsive border rounded" style="max-height:260px">
+              <table class="table table-sm mb-0">
+                <thead class="table-light" style="position:sticky;top:0">
+                  <tr>
+                    <th>Menu</th>
+                    <th>Module</th>
+                    <th>Chế độ hiển thị</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for m in menus_for_override %}
+                  {% set ov = menu_overrides.get(m.id, 'default') %}
+                  <tr>
+                    <td>
+                      {{ m.name }}
+                      <small class="text-muted">({{ m.code }})</small>
+                    </td>
+                    <td><small class="text-muted">{{ m.module or '-' }}</small></td>
+                    <td style="max-width:220px">
+                      <input type="hidden" name="menu_override_ids" value="{{ m.id }}">
+                      <select class="form-select form-select-sm" name="menu_override_{{ m.id }}">
+                        <option value="default" {{ 'selected' if ov == 'default' else '' }}>Mặc định theo role</option>
+                        <option value="show" {{ 'selected' if ov == 'show' else '' }}>Hiện</option>
+                        <option value="hide" {{ 'selected' if ov == 'hide' else '' }}>Ẩn</option>
+                      </select>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <small class="text-muted">Ghi đè chỉ ảnh hưởng hiển thị menu, không thay thế quyền thao tác API/CRUD.</small>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-content-between">
+        <a href="{{ url_for('settings.users.users_list') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if user else 'Tạo tài khoản' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div></div>
+{% endblock %}

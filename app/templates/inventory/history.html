@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử tồn kho{% endblock %}
+{% block page_title %}<i class="fas fa-history me-2"></i>Lịch sử biến động tồn kho{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">Biến động tồn kho</div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-2">
+      <div class="col-md-3">
+        <select name="product_id" class="form-select form-select-sm select2">
+          <option value="">-- Tất cả hàng hóa --</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {{ 'selected' if product_id and product_id==p.id|string }}>
+            {{ p.code }} - {{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="warehouse_id" class="form-select form-select-sm">
+          <option value="">-- Tất cả kho --</option>
+          {% for w in warehouses %}
+          <option value="{{ w.id }}" {{ 'selected' if warehouse_id and warehouse_id==w.id|string }}>{{ w.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><input type="date" name="from_date" value="{{ from_date }}" class="form-control form-control-sm" placeholder="Từ ngày"></div>
+      <div class="col-md-2 d-flex gap-1">
+        <input type="date" name="to_date" value="{{ to_date }}" class="form-control form-control-sm" placeholder="Đến ngày">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search"></i></button>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Thời gian</th><th>Hàng hóa</th><th>Kho</th>
+            <th class="text-center">Loại</th><th>Số chứng từ</th>
+            <th class="text-end">Trước</th>
+            <th class="text-end">Thay đổi</th>
+            <th class="text-end">Sau</th>
+            <th class="text-end">Đơn giá</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in histories.items %}
+          <tr>
+            <td class="small">{{ h.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ h.product.code if h.product else '' }} - {{ h.product.name[:20] if h.product else '' }}</td>
+            <td>{{ h.warehouse.name if h.warehouse else '' }}</td>
+            <td class="text-center">
+              {% if h.transaction_type == 'stock_in' %}
+                <span class="badge bg-success">Nhập kho</span>
+              {% elif h.transaction_type == 'stock_out' %}
+                <span class="badge bg-primary">Xuất kho</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ h.transaction_type }}</span>
+              {% endif %}
+            </td>
+            <td><code>{{ h.reference_code or '-' }}</code></td>
+            <td class="text-end">{{ h.quantity_before|number(3) }}</td>
+            <td class="text-end fw-bold {{ 'text-success' if h.quantity_change > 0 else 'text-danger' }}">
+              {{ '+' if h.quantity_change > 0 else '' }}{{ h.quantity_change|number(3) }}
+            </td>
+            <td class="text-end fw-bold">{{ h.quantity_after|number(3) }}</td>
+            <td class="text-end">{{ h.unit_cost|currency }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">Không có lịch sử</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if histories.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ histories.total }} bản ghi</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in histories.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==histories.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('inventory.history', page=page, product_id=product_id, warehouse_id=warehouse_id) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>$(function(){ $('.select2').select2({theme:'bootstrap-5',width:'100%'}); });</script>
+{% endblock %}

@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if stock_out else 'Tạo' }} phiếu xuất{% endblock %}
+{% block page_title %}
+  <i class="fas fa-arrow-circle-up me-2 text-primary"></i>
+  {{ 'Cập nhật: ' + stock_out.code if stock_out else 'Tạo phiếu xuất kho' }}
+{% endblock %}
+
+{% block content %}
+<form method="POST" id="mainForm">
+<div class="row g-2">
+
+  <!-- ── Header ── -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header fw-bold"><i class="fas fa-info-circle me-2"></i>Thông tin phiếu xuất</div>
+      <div class="card-body p-2">
+        <div class="row g-2">
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Ngày xuất <span class="text-danger">*</span></label>
+            <input type="date" name="date" class="form-control" required
+                   value="{{ stock_out.date.isoformat() if stock_out else today.isoformat() }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Kho xuất <span class="text-danger">*</span></label>
+            <select name="warehouse_id" class="form-select" required id="warehouseSel">
+              <option value="">-- Chọn kho --</option>
+              {% for w in warehouses %}
+              <option value="{{ w.id }}"
+                {{
+                  'selected'
+                  if (stock_out and stock_out.warehouse_id == w.id)
+                  or (not stock_out and loop.first)
+                }}>
+                {{ w.code }} - {{ w.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Khách hàng</label>
+            <select name="customer_id" class="form-select" id="customerSel">
+              <option value="">-- Chọn khách hàng --</option>
+              {% for c in customers %}
+              <option value="{{ c.id }}" {{ 'selected' if stock_out and stock_out.customer_id==c.id }}>
+                {{ c.code }} - {{ c.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Số hóa đơn bán ra</label>
+            <div class="input-group">
+              <input type="text" name="invoice_no" class="form-control"
+                     value="{{ stock_out.invoice_no if stock_out else '' }}"
+                     placeholder="Số HĐ">
+              <input type="text" name="invoice_series" class="form-control" style="max-width:80px"
+                     value="{{ stock_out.invoice_series if stock_out else '' }}"
+                     placeholder="Ký hiệu">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Diễn giải / Ghi chú</label>
+            <input type="text" name="note" class="form-control"
+                   value="{{ stock_out.note if stock_out else '' }}"
+                   placeholder="Ghi chú cho phiếu xuất...">
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+    <div class="p-3 bg-light rounded w-100">
+        <label class="fw-semibold mb-2 d-block text-primary">
+            <i class="fas fa-percent me-1"></i>Phương thức tính thuế:
+        </label>
+        <div class="form-check">
+            <input class="form-check-input vat-mode-radio" type="radio" id="vatModeGrouped"
+                   name="vat_mode" value="grouped" {{ 'checked' if not stock_out or stock_out.vat_mode != 'per_item' }}>
+            <label class="form-check-label" for="vatModeGrouped">VAT gộp (Tính trên tổng phiếu)</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input vat-mode-radio" type="radio" id="vatModePerItem"
+                   name="vat_mode" value="per_item" {{ 'checked' if stock_out and stock_out.vat_mode == 'per_item' }}>
+            <label class="form-check-label" for="vatModePerItem">VAT theo từng mặt hàng</label>
+        </div>
+        
+        <div id="vatManualCheckDiv" class="mt-2 ms-3" style="{{ 'display:none;' if not stock_out or stock_out.vat_mode == 'grouped' }}">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="vatManualChk" name="vat_manual"
+                       {{ 'checked' if stock_out and stock_out.vat_manual }}>
+                <label class="form-check-label text-muted" for="vatManualChk">Nhập tổng VAT thủ công</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+          <div class="col-md-4" id="vatGroupedSection" style="{{ '' if not stock_out or stock_out.vat_mode == 'grouped' else 'display:none;' }}">
+            <label class="form-label">Tỷ lệ VAT (%)</label>
+            <select name="vat_rate_grouped" class="form-select" id="vatRateGrouped">
+              <option value="">-- Chọn tỷ lệ --</option>
+              {% for r in [0,5,8,10] %}<option value="{{ r }}" {{ 'selected' if stock_out and stock_out.vat_rate_grouped|float==r else '' }}>{{ r }}%</option>{% endfor %}
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Items Table ── -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list-ul me-2"></i>Chi tiết hàng hóa xuất kho</span>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#quickProductModal">
+            <i class="fas fa-box-open me-1"></i>Thêm nhanh SP
+          </button>
+          <button type="button" class="btn btn-sm btn-success" id="addRowBtn">
+            <i class="fas fa-plus me-1"></i>Thêm dòng
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-2">
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-0">
+            <thead style="background:#1a3a5c;color:#fff">
+              <tr>
+                <th width="35" class="text-center">STT</th>
+                <th width="230">Hàng hóa <span class="text-warning">*</span></th>
+                <th width="60" class="text-center">ĐVT gốc</th>
+                <th width="90" class="text-center">Tồn kho</th>
+                <th width="110" class="text-end">Số lượng</th>
+                <th width="90" class="text-center">ĐVT</th>
+                <th width="100" class="text-center">Hệ số</th>
+                <th width="140" class="text-end">Đơn giá bán</th>
+                <th width="130" class="text-end">Thành tiền</th>
+                <th width="75" class="text-center vat-auto-col">VAT %</th>
+                <th width="120" class="text-end vat-auto-col">Tiền VAT</th>
+                <th width="140" class="text-end">Tổng dòng</th>
+                <th width="90" class="text-center">Thùng</th>
+                <th width="40"></th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody">
+              {% if stock_out %}
+                {% for item in stock_out.items %}
+                <tr class="item-row">
+                  <td class="text-center text-muted row-num">{{ loop.index }}</td>
+                  <td>
+                    <select name="product_id[]" class="form-select form-select-sm product-sel" required>
+                      <option value="">-- Chọn hàng --</option>
+                      {% for p in products %}
+                      <option value="{{ p.id }}"
+                              data-price="{{ p.sale_price|float }}"
+                              data-unit="{{ p.get_unit_name() }}"
+                              data-base-unit-id="{{ p.unit_id or '' }}"
+                              data-vat="{{ p.vat_rate|float }}"
+                              {{ 'selected' if item.product_id==p.id }}>
+                        {{ p.code }} – {{ p.name }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td class="text-center"><input type="text" class="form-control form-control-sm unit-txt text-center" readonly value="{{ item.product.get_unit_name() if item.product else '' }}"></td>
+                  <td class="text-center"><input type="text" class="form-control form-control-sm stock-txt text-center bg-light" readonly value="-"></td>
+                  <td><input type="number" name="quantity[]" class="form-control form-control-sm qty-input text-end" value="{{ item.quantity|float }}" step="0.001" min="0.001" required></td>
+                  <td>
+                    <select name="unit_item_id[]" class="form-select form-select-sm unit-sel">
+                      <option value="">Gốc: {{ item.product.get_unit_name() if item.product else '' }}</option>
+                      {% for u in units %}
+                      <option value="{{ u.id }}" {{ 'selected' if item.unit_id==u.id }}>{{ u.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td><input type="number" name="factor_item[]" class="form-control form-control-sm factor-input text-end" value="{{ item.conversion_factor or 1 }}" step="0.0001" min="0.0001" readonly></td>
+                  <td><input type="number" name="unit_price[]" class="form-control form-control-sm price-input text-end" value="{{ item.unit_price|int }}" step="1" min="0"></td>
+                  <td><input type="text" class="form-control form-control-sm amount-txt text-end bg-light" readonly value="{{ item.amount|currency }}"></td>
+                  <td class="vat-auto-col">
+                    <select name="vat_rate[]" class="form-select form-select-sm vat-sel">
+                      {% for r in [0,5,8,10] %}<option value="{{ r }}" {{ 'selected' if item.vat_rate|float==r }}>{{ r }}%</option>{% endfor %}
+                    </select>
+                  </td>
+                  <td class="vat-auto-col"><input type="text" class="form-control form-control-sm vat-txt text-end bg-light" readonly value="{{ item.vat_amount|currency }}"></td>
+                  <td><input type="text" class="form-control form-control-sm total-txt text-end fw-bold bg-light" readonly value="{{ item.total_amount|currency }}"></td>
+                  <td><input type="text" name="box_note[]" class="form-control form-control-sm box-note-input" value="{{ item.box_note or '' }}" placeholder="VD: 1 thùng"></td>
+                  <td><button type="button" class="btn btn-sm btn-outline-danger remove-row py-0 px-1"><i class="fas fa-times"></i></button></td>
+                </tr>
+                {% endfor %}
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        <div class="alert alert-warning mt-2 mb-0 py-2 d-none" id="convWarnOut">
+          <i class="fas fa-exclamation-triangle me-1"></i>
+          Có <span class="conv-count">0</span> dòng chưa có quy đổi đơn vị. Vui lòng khai báo tại Cài đặt > Quy đổi đơn vị.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Summary ── -->
+  <div class="col-md-5 ms-auto">
+    <div class="card border-primary">
+      <div class="card-header bg-primary text-white fw-bold">
+        <i class="fas fa-receipt me-2"></i>Tổng kết phiếu xuất / Hóa đơn
+      </div>
+      <div class="card-body p-2">
+        <table class="table table-sm mb-0">
+          <tr>
+            <td>Tổng tiền hàng (chưa VAT):</td>
+            <td class="text-end fw-bold" id="sumSubtotal">0 VND</td>
+          </tr>
+          <tr id="vatAutoRow">
+            <td>Tổng tiền VAT (tự tính):</td>
+            <td class="text-end text-info fw-bold" id="sumVatAuto">0 VND</td>
+          </tr>
+          <tr id="vatManualRow" style="display:none">
+            <td class="text-warning fw-bold">
+              <i class="fas fa-hand-paper me-1"></i>VAT nhập tay:
+            </td>
+            <td class="text-end">
+              <div class="input-group input-group-sm justify-content-end">
+                <input type="number" name="vat_manual_val" id="vatManualInput"
+                       class="form-control text-end" style="max-width:140px"
+                       step="1" min="0"
+                       value="{{ stock_out.vat_manual_val|float|int if stock_out else 0 }}">
+                <span class="input-group-text">VND</span>
+              </div>
+            </td>
+          </tr>
+          <tr id="groupedVatRow" style="display:none">
+            <td class="text-info fw-bold">
+              <i class="fas fa-tags me-1"></i>VAT gộp:
+            </td>
+            <td class="text-end text-info fw-bold" id="groupedVatAmount">0 VND</td>
+          </tr>
+          <tr>
+            <td>Chiết khấu:</td>
+            <td class="text-end">
+              <div class="input-group input-group-sm justify-content-end">
+                <input type="number" name="discount_amount" id="discountInput"
+                       class="form-control text-end" style="max-width:140px"
+                       step="1" min="0"
+                       value="{{ stock_out.discount_amount|float|int if stock_out else 0 }}">
+                <span class="input-group-text">VND</span>
+              </div>
+            </td>
+          </tr>
+          <tr class="table-primary">
+            <td class="fw-bold fs-6">TỔNG THANH TOÁN:</td>
+            <td class="text-end fw-bold fs-5 text-primary" id="sumTotal">0 VND</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 d-flex justify-content-between no-print">
+    <a href="{{ url_for('stock_out.index') }}" class="btn btn-outline-secondary btn-lg">
+      <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+    <button type="submit" class="btn btn-primary btn-lg">
+      <i class="fas fa-save me-1"></i>{{ 'Cập nhật phiếu' if stock_out else 'Tạo phiếu xuất' }}
+    </button>
+  </div>
+</div>
+</form>
+
+<div class="modal fade" id="quickProductModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-box-open me-2"></i>Thêm nhanh hàng hóa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-5">
+              <label class="form-label">
+                Mã hàng
+              </label>
+
+             <input type="text"
+                class="form-control text-uppercase"
+                id="qpCodeOut"
+                placeholder="Để trống để tự tạo mã">
+
+            </div>
+
+            <div class="col-7">
+              <label class="form-label">
+                Tên hàng
+                <span class="text-danger">*</span>
+              </label>
+
+              
+              <input type="text"
+                    class="form-control"
+                    id="qpNameOut"
+                    placeholder="Tên sản phẩm">
+                        </div>
+
+          <div class="col-4">
+            <label class="form-label">ĐVT gốc</label>
+            <select class="form-select" id="qpUnitOut">
+              <option value="">-- Chọn --</option>
+              {% for u in units %}
+              <option value="{{ u.id }}">{{ u.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-8">
+            <label class="form-label">Nhóm hàng</label>
+            <select class="form-select" id="qpCategoryOut">
+              <option value="">-- Chọn --</option>
+              {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-4">
+            <label class="form-label">Giá nhập</label>
+            <input type="number" class="form-control text-end" id="qpPurchaseOut" min="0" step="1" value="0">
+          </div>
+          <div class="col-4">
+            <label class="form-label">Giá bán</label>
+            <input type="number" class="form-control text-end" id="qpSaleOut" min="0" step="1" value="0">
+          </div>
+          <div class="col-4">
+            <label class="form-label">VAT %</label>
+            <input type="number" class="form-control text-end" id="qpVatOut" min="0" step="1" value="0">
+          </div>
+        </div>
+        <div class="alert alert-warning mt-3 mb-0 py-2 d-none" id="qpErrOut"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-primary" id="qpSaveOut">
+          <i class="fas fa-save me-1"></i>Lưu hàng hóa
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<template id="rowTpl">
+<tr class="item-row">
+  <td class="text-center text-muted row-num">-</td>
+  <td>
+    <select name="product_id[]" class="form-select form-select-sm product-sel" required>
+      <option value="">-- Chọn hàng hóa --</option>
+      {% for p in products %}
+      <option value="{{ p.id }}"
+              data-price="{{ p.sale_price|float }}"
+              data-unit="{{ p.get_unit_name() }}"
+              data-base-unit-id="{{ p.unit_id or '' }}"
+              data-vat="{{ p.vat_rate|float }}">
+         {{ p.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </td>
+  <td class="text-center"><input type="text" class="form-control form-control-sm unit-txt text-center" readonly placeholder="-"></td>
+  <td class="text-center"><input type="text" class="form-control form-control-sm stock-txt text-center bg-light" readonly value="-"></td>
+  <td><input type="number" name="quantity[]" class="form-control form-control-sm qty-input text-end" value="1" step="1" min="1" required></td>
+  <td>
+    <select name="unit_item_id[]" class="form-select form-select-sm unit-sel">
+      <option value="">Gốc</option>
+      {% for u in units %}
+      <option value="{{ u.id }}">{{ u.name }}</option>
+      {% endfor %}
+    </select>
+  </td>
+  <td><input type="number" name="factor_item[]" class="form-control form-control-sm factor-input text-end" value="1" step="1" min="1" readonly></td>
+  <td><input type="number" name="unit_price[]" class="form-control form-control-sm price-input text-end" value="0" step="1" min="0"></td>
+  <td><input type="text" class="form-control form-control-sm amount-txt text-end bg-light" readonly value="0"></td>
+  <td class="vat-auto-col">
+    <select name="vat_rate[]" class="form-select form-select-sm vat-sel">
+      <option value="0">0%</option><option value="5">5%</option>
+      <option value="8">8%</option><option value="10" selected>10%</option>
+    </select>
+  </td>
+  <td class="vat-auto-col"><input type="text" class="form-control form-control-sm vat-txt text-end bg-light" readonly value="0"></td>
+  <td><input type="text" class="form-control form-control-sm total-txt text-end fw-bold bg-light" readonly value="0"></td>
+  <td><input type="text" name="box_note[]" class="form-control form-control-sm box-note-input" placeholder="VD: 1 thùng"></td>
+  <td><button type="button" class="btn btn-sm btn-outline-danger remove-row py-0 px-1"><i class="fas fa-times"></i></button></td>
+</tr>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.unitConvMap = {{ unit_conv_map|tojson|safe }};
+</script>
+<script>
+$(document).ready(function () {
+
+    // Customer select 
+    $('#customerSel').select2({
+        theme: 'bootstrap-5',
+        placeholder: "-- Chọn khách hàng --",
+        allowClear: true,
+        width: '100%'
+    });
+
+    // Kho 
+    $('#warehouseSel').select2({
+        theme: 'bootstrap-5',
+        placeholder: "-- Chọn kho --",
+        width: '100%'
+    });
+
+});
+</script>
+<script src="{{ url_for('static', filename='js/stock_out_form.js') }}"></script>
+<script src="{{ url_for('static', filename='js/product_code.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const qpNameOut = document.getElementById('qpNameOut');
+    const qpCodeOut = document.getElementById('qpCodeOut');
+    const quickModal = document.getElementById('quickProductModal');
+
+    if (!qpNameOut || !qpCodeOut) {
+        return;
+    }
+
+    // =========================================
+    // AUTO GENERATE CODE (centralized)
+    // =========================================
+
+    let codeDebounce = null;
+    let latestReq = 0;
+    qpNameOut.addEventListener('input', function () {
+
+        // nếu user đã nhập tay
+        if (qpCodeOut.dataset.manual === '1') {
+            return;
+        }
+        if (codeDebounce) clearTimeout(codeDebounce);
+        const currentText = this.value;
+        codeDebounce = setTimeout(async () => {
+            const reqId = ++latestReq;
+            const suggested = await ProductCode.slugFromName(currentText);
+            if (reqId !== latestReq) return;
+            qpCodeOut.value = suggested || '';
+        }, 250);
+    });
+
+    // =========================================
+    // DETECT USER INPUT MANUAL
+    // =========================================
+
+    qpCodeOut.addEventListener('input', function () {
+
+        if (this.value.trim() !== '') {
+            this.dataset.manual = '1';
+        } else {
+            this.dataset.manual = '0';
+        }
+    });
+
+    // =========================================
+    // RESET WHEN CLOSE MODAL
+    // =========================================
+
+    if (quickModal) {
+
+        quickModal.addEventListener('hidden.bs.modal', function () {
+
+            qpCodeOut.dataset.manual = '0';
+
+            // nếu muốn reset luôn:
+            // qpNameOut.value = '';
+            // qpCodeOut.value = '';
+        });
+    }
+});
+</script> 
+<script>
+  document.getElementById('qpSaveOut').addEventListener('click', async function () {
+
+    const errBox = document.getElementById('qpErrOut');
+
+    errBox.classList.add('d-none');
+    errBox.innerHTML = '';
+
+    const payload = {
+        code: document.getElementById('qpCodeOut').value.trim(),
+        name: document.getElementById('qpNameOut').value.trim(),
+        unit_id: document.getElementById('qpUnitOut').value,
+        category_id: document.getElementById('qpCategoryOut').value,
+        purchase_price: document.getElementById('qpPurchaseOut').value || 0,
+        sale_price: document.getElementById('qpSaleOut').value || 0,
+        vat_rate: document.getElementById('qpVatOut').value || 0,
+    };
+
+    // validate
+    if (!payload.name) {
+
+        errBox.innerHTML = 'Vui lòng nhập tên hàng hóa';
+        errBox.classList.remove('d-none');
+
+        return;
+    }
+
+    try {
+
+        const btn = this;
+
+        btn.disabled = true;
+        btn.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
+
+        // =====================================
+        // AJAX SAVE
+        // =====================================
+
+        const res = await fetch('{{ url_for("products.quick_create_product") }}', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload)
+});
+
+        const data = await res.json();
+
+        // =====================================
+        // ERROR
+        // =====================================
+
+        if (!res.ok || !data.success) {
+
+            errBox.innerHTML =
+                data.message || 'Không thể tạo hàng hóa';
+
+            errBox.classList.remove('d-none');
+
+            return;
+        }
+
+        // =====================================
+        // SUCCESS
+        // =====================================
+
+        // thêm option vào select hàng hóa
+        const optionText =
+            `${data.product.code} – ${data.product.name}`;
+
+        $('.product-sel').each(function () {
+
+            const opt = new Option(
+                optionText,
+                data.product.id,
+                false,
+                false
+            );
+
+            opt.dataset.price = data.product.sale_price || 0;
+            opt.dataset.unit = data.product.unit || '';
+            opt.dataset.baseUnitId = data.product.unit_id || '';
+            opt.dataset.vat = data.product.vat_rate || 0;
+
+            this.add(opt);
+        });
+
+        // đóng modal
+        const modal =
+            bootstrap.Modal.getInstance(
+                document.getElementById('quickProductModal')
+            );
+
+        modal.hide();
+
+        // reset form
+        document.getElementById('qpCodeOut').value = '';
+        document.getElementById('qpNameOut').value = '';
+        document.getElementById('qpPurchaseOut').value = 0;
+        document.getElementById('qpSaleOut').value = 0;
+        document.getElementById('qpVatOut').value = 0;
+
+        document.getElementById('qpCodeOut').dataset.manual = '0';
+
+    } catch (e) {
+
+        errBox.innerHTML = e.message;
+        errBox.classList.remove('d-none');
+
+    } finally {
+
+        const btn = document.getElementById('qpSaveOut');
+
+        btn.disabled = false;
+
+        btn.innerHTML =
+            '<i class="fas fa-save me-1"></i>Lưu hàng hóa';
+    }
+});
+</script>
+{% endblock %}

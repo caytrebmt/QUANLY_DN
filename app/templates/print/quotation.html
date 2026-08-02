@@ -1,0 +1,146 @@
+{% extends "print/base_print.html" %} {% block body %}
+<table class="no-border">
+  <tr>
+    <td class="no-border w-50">
+      <div class="fw-bold">{{ company.name }}</div>
+      <div class="small">{{ company.address }}</div>
+      <div class="small">
+        MST: {{ company.tax_code }}{% if company.phone %} | ĐT: {{ company.phone
+        }}{% endif %}
+      </div>
+    </td>
+    <td class="no-border text-end w-50 small">
+      Số: <strong>{{ quotation.code }}</strong><br />
+      Từ ngày: {{ quotation.date|dateformat }}<br />
+      Đến ngày: {{ quotation.valid_until|dateformat if quotation.valid_until
+      else '-' }}
+    </td>
+  </tr>
+</table>
+
+<div class="text-center mt-3 mb-3">
+  <div class="title">BẢNG BÁO GIÁ</div>
+</div>
+
+<table class="no-border mt-3 mb-3" style="width: 100%; font-size: 13px">
+  <tr>
+    <td>
+      Kính gửi:
+      <strong
+        >{{ quotation.recipient_name or (quotation.customer.name if
+        quotation.customer else 'Quý khách hàng') }}</strong
+      >
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Địa chỉ: {{ quotation.recipient_address or (quotation.customer.address if
+      quotation.customer else '') }}
+    </td>
+  </tr>
+  {% if quotation.recipient_email or (quotation.customer and
+  quotation.customer.email) %}
+  <tr>
+    <td class="no-border">
+      Email: {{ quotation.recipient_email or quotation.customer.email }}
+    </td>
+    <td class="no-border"></td>
+  </tr>
+  {% endif %}
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 5%" ; class="text-center">STT</th>
+      <th class="text-center">Tên hàng hóa</th>
+      <th style="width: 9%" ; class="text-center">ĐVT</th>
+      <th style="width: 10%" ; class="text-center">SL</th>
+      <th style="width: 13%" ; class="text-center">Đơn giá</th>
+      <th style="width: 14%" ; class="text-center">Thành tiền</th>
+      {% if quotation.vat_mode != 'grouped' %}
+      <th style="width: 8%" class="text-end">VAT%</th>
+      <th style="width: 14%" class="text-end">Tổng</th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td class="text-center">{{ loop.index }}</td>
+      <td>{{ item.product.name if item.product else '' }}</td>
+      <td class="text-center">
+        {{ item.unit.name if item.unit else (item.product.get_unit_name() if
+        item.product else '') }}
+      </td>
+      <td class="text-end">{{ item.quantity|qty_vn }}</td>
+      <td class="text-end">{{ item.unit_price|currency }}</td>
+      <td class="text-end">{{ item.amount|currency }}</td>
+      {% if quotation.vat_mode != 'grouped' %}
+      <td class="text-end">{{ item.vat_rate|number(0) }}%</td>
+      <td class="text-end fw-bold">{{ item.total_amount|currency }}</td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="5" class="text-end">Cộng tiền hàng</th>
+      <th class="text-end">{{ quotation.subtotal|currency }}</th>
+      {% if quotation.vat_mode != 'grouped' %}
+      <th></th>
+      <th></th>
+      {% endif %}
+    </tr>
+    {% if quotation.discount_amount %}
+    <tr>
+      <th colspan="5" class="text-end">Chiết khấu</th>
+      <th class="text-end">{{ quotation.discount_amount|currency }}</th>
+      {% if quotation.vat_mode != 'grouped' %}
+      <th></th>
+      <th></th>
+      {% endif %}
+    </tr>
+    {% endif %}
+    <tr>
+      <th colspan="5" class="text-end">
+        Thuế GTGT{% if quotation.vat_mode == 'grouped' %} ({{
+        quotation.vat_rate_grouped|number(0) }}%){% endif %}
+      </th>
+      <th class="text-end">{{ quotation.vat_amount|currency }}</th>
+      {% if quotation.vat_mode != 'grouped' %}
+      <th></th>
+      <th></th>
+      {% endif %}
+    </tr>
+    <tr>
+      <th colspan="5" class="text-end">Tổng cộng</th>
+      <th class="text-end fw-bold">{{ quotation.total_amount|currency }}</th>
+      {% if quotation.vat_mode != 'grouped' %}
+      <th></th>
+      <th></th>
+      {% endif %}
+    </tr>
+  </tfoot>
+</table>
+
+<div class="mt-2">
+  <strong>Bằng chữ:</strong> {{ quotation.total_amount|so_thanh_chu }}
+</div>
+{% if quotation.terms %}
+<div class="mt-2"><strong>Ghi chú:</strong> {{ quotation.terms }}</div>
+{% endif %} {% if quotation.note %}
+<div class="mt-1"><strong>Ghi chú:</strong> {{ quotation.note }}</div>
+{% endif %}
+
+<table class="no-border mt-3 sign-row">
+  <tr class="text-center fw-bold">
+    <td class="no-border">Người lập báo giá</td>
+    <td class="no-border">Khách hàng xác nhận</td>
+  </tr>
+  <tr class="text-center small">
+    <td class="no-border">(Ký, ghi rõ họ tên)</td>
+    <td class="no-border">(Ký, ghi rõ họ tên)</td>
+  </tr>
+</table>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Tồn đầu kỳ{% endblock %}
+{% block page_title %}<i class="fas fa-boxes me-2"></i>Nhập tồn đầu kỳ{% endblock %}
+{% block content %}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Danh sách tồn đầu kỳ</span>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('opening_stock.download_template') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-download me-1"></i>Mẫu import
+      </a>
+      <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importModal">
+        <i class="fas fa-file-excel me-1"></i>Import Excel
+      </button>
+      <form method="POST" action="{{ url_for('opening_stock.post_all') }}"
+            onsubmit="return confirm('Cập nhật TẤT CẢ tồn đầu kỳ CHƯA ĐƯỢC POST vào tồn kho?\n\nLưu ý: Sau khi cập nhật, dữ liệu sẽ lên Inventory và từ đó ảnh hưởng báo cáo.')">
+        <button class="btn btn-sm btn-warning">
+          <i class="fas fa-play me-1"></i>Cập nhật tất cả vào kho
+        </button>
+      </form>
+      <a href="{{ url_for('opening_stock.create') }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-plus me-1"></i>Nhập tồn đầu kỳ
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-3">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
+                 placeholder="Tìm mã hàng, tên hàng..." autocomplete="off">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <input type="date" name="period_date" value="{{ period_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3">
+        <select name="warehouse_id" class="form-select form-select-sm">
+          <option value="">-- Tất cả kho --</option>
+          {% for w in warehouses %}
+          <option value="{{ w.id }}" {{ 'selected' if warehouse_id and warehouse_id==w.id|string }}>{{ w.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Lọc</button>
+        <a href="{{ url_for('opening_stock.index') }}" class="btn btn-sm btn-outline-secondary ms-1">Reset</a>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Ngày đầu kỳ</th><th>Mã hàng</th><th>Tên hàng hóa</th>
+            <th>Kho</th><th class="text-end">Số lượng</th>
+            <th class="text-end">Giá vốn</th><th class="text-end">Giá trị</th>
+            <th class="text-center">Trạng thái</th>
+            <th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records.items %}
+          <tr>
+            <td>{{ r.period_date|dateformat }}</td>
+            <td><code>{{ r.product.code if r.product else '' }}</code></td>
+            <td>{{ r.product.name if r.product else '' }}</td>
+            <td>{{ r.warehouse.name if r.warehouse else '' }}</td>
+            <td class="text-end fw-bold">{{ r.quantity|number(3) }}</td>
+            <td class="text-end">{{ r.unit_cost|currency }}</td>
+            <td class="text-end">{{ r.amount|currency }}</td>
+            <td class="text-center">
+              {% if r.is_posted %}
+                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã cập nhật</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Chưa cập nhật → cần bấm “Cập nhật kho”</span>
+              {% endif %}
+            </td>
+            <td class="text-center no-print">
+              {% if not r.is_posted %}
+              <div class="d-flex gap-1 justify-content-center">
+                <a href="{{ url_for('opening_stock.edit', id=r.id) }}"
+                   class="btn btn-sm btn-outline-primary py-0 px-2" title="Sửa">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <form method="POST" action="{{ url_for('opening_stock.post_single', id=r.id) }}" class="d-inline"
+                      onsubmit="return confirm('Cập nhật dòng này vào tồn kho?')">
+                  <button class="btn btn-sm btn-outline-success py-0 px-2" title="Cập nhật vào kho">
+                    <i class="fas fa-play"></i>
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('opening_stock.delete', id=r.id) }}" class="d-inline"
+                      onsubmit="return confirm('Xóa dòng tồn đầu kỳ này?')">
+                  <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Xóa">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+              {% else %}
+              <span class="text-muted"><i class="fas fa-lock"></i></span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">
+            Chưa có tồn đầu kỳ. <a href="{{ url_for('opening_stock.create') }}">Nhập ngay</a>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if records.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ records.total }} dòng</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in records.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==records.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('opening_stock.index', page=page) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="fas fa-file-excel me-2"></i>Import tồn đầu kỳ từ Excel</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <form method="POST" action="{{ url_for('opening_stock.import_excel') }}" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div class="alert alert-info small">
+          Cột bắt buộc: <strong>Mã hàng, Số lượng, Giá vốn</strong>.
+          <a href="{{ url_for('opening_stock.download_template') }}">Tải file mẫu</a>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ngày đầu kỳ</label>
+          <input type="date" name="period_date" class="form-control" required value="{{ ''}}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Kho</label>
+          <select name="warehouse_id" class="form-select" required>
+            <option value="">-- Chọn kho --</option>
+            {% for w in warehouses %}
+            <option value="{{ w.id }}">{{ w.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">File Excel (.xlsx, .xls)</label>
+          <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="submit" class="btn btn-success"><i class="fas fa-upload me-1"></i>Import</button>
+      </div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

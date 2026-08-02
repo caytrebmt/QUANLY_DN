@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Bảng cân đối kế toán{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">BẢNG CÂN ĐỐI KẾ TOÁN</h5>
+    <a href="{{ url_for('accounting.export_balance_sheet', date=as_of_date|dateformat('%Y-%m-%d')) }}" class="btn btn-sm btn-success">
+      <i class="fas fa-file-excel me-1"></i>Xuất Excel
+    </a>
+  </div>
+  <div class="card-body">
+    <form class="row g-2 mb-3" method="get">
+      <div class="col-md-3">
+        <label class="form-label">Ngày báo cáo</label>
+        <input type="date" name="date" class="form-control" value="{{ as_of_date|dateformat('%Y-%m-%d') }}" />
+      </div>
+      <div class="col-md-2 align-self-end">
+        <button class="btn btn-primary w-100" type="submit">Xem</button>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 120px">Mã số</th>
+            <th>Chỉ tiêu</th>
+            <th class="text-end" style="width: 240px">Số tiền (VND)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for code, item in data.items() %}
+          <tr>
+            <td><strong>{{ code }}</strong></td>
+            <td>{{ item.label }}</td>
+            <td class="text-end fw-bold">{{ item.amount|currency }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="text-center text-muted">Không có dữ liệu</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

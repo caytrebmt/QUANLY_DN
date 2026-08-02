@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.idea/
+.vscode/
+node_modules/
+pgdata/
+pgadmin_data/
+backups/
+*.log
+.env
+.env.prod
+dist/
+build/

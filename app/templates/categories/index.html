@@ -1,0 +1,73 @@
+{% extends "base.html" %} {% block title %}Nhóm hàng hóa{% endblock %} {% block
+page_title %}<i class="fas fa-tags me-2"></i>Bảng nhóm hàng hóa{% endblock %} {%
+block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Danh mục nhóm hàng hóa</span>
+    <a href="{{ url_for('categories.create') }}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i>Thêm nhóm
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+      <thead>
+        <tr>
+          <!--<th>Mã nhóm</th>-->
+          <th>Tên nhóm hàng</th>
+          <th>Nhóm cha</th>
+          <th>Mô tả</th>
+          <th>Số HH</th>
+          <th class="text-center">Tình trạng</th>
+          <th class="text-center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cats %}
+        <tr>
+          <!--<td><code>{{ c.code }}</code></td>-->
+          <td class="fw-semibold">
+            {% if c.parent %}<span class="text-muted ms-3">↳</span> {% endif %}
+            {{ c.name }}
+          </td>
+          <td>{{ c.parent.name if c.parent else '-' }}</td>
+          <td class="text-muted small">{{ c.description or '-' }}</td>
+          <td class="text-center">
+            <span class="badge bg-secondary"
+              >{{ product_counts.get(c.id, 0) }}</span
+            >
+          </td>
+          <td class="text-center">
+            {% if c.is_active %}<span class="badge bg-success">Hoạt động</span>
+            {% else %}<span class="badge bg-secondary">Ngừng</span>{% endif %}
+          </td>
+          <td class="text-center">
+            <a
+              href="{{ url_for('categories.edit', id=c.id) }}"
+              class="btn btn-sm btn-outline-primary py-0 px-2"
+            >
+              <i class="fas fa-edit"></i>
+            </a>
+            <form
+              method="POST"
+              action="{{ url_for('categories.delete', id=c.id) }}"
+              class="d-inline"
+              onsubmit="return confirm('Vô hiệu hóa nhóm {{ c.code }}?')"
+            >
+              <button class="btn btn-sm btn-outline-danger py-0 px-2">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            Chưa có nhóm hàng nào
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

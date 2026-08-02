@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Quy đổi đơn vị{% endblock %}
+{% block page_title %}<i class="fas fa-ruler-combined me-2"></i>Quy đổi đơn vị theo sản phẩm{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <form method="GET" class="row g-2 align-items-center m-0">
+      <div class="col-auto">
+        <input type="text" name="search" class="form-control form-control-sm" value="{{ search or '' }}" placeholder="Tìm mã / tên hàng">
+      </div>
+      <div class="col-auto">
+        <select name="product_id" class="form-select form-select-sm">
+          <option value="">-- Tất cả hàng hóa --</option>
+          {% for p in products %}
+            <option value="{{ p.id }}" {{ 'selected' if product_id==p.id }}>{{ p.code }} - {{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-sm btn-outline-primary"><i class="fas fa-search me-1"></i>Lọc</button>
+      </div>
+    </form>
+    <a href="{{ url_for('settings.system.create_unit_conversion') }}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i>Thêm quy đổi
+    </a>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th width="70">STT</th>
+            <th>Hàng hóa</th>
+            <th class="text-center">Đơn vị gốc</th>
+            <th class="text-center">Đơn vị quy đổi</th>
+            <th class="text-end">Hệ số</th>
+            <th class="text-center">Công thức</th>
+            <th class="text-center" width="130">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>
+              <div class="fw-semibold"><!--{{ r.product.code if r.product else '' }} - -->{{ r.product.name if r.product else '' }}</div>
+            </td>
+            <td class="text-center">{{ r.to_unit.name if r.to_unit else '-' }}</td>
+            <td class="text-center">{{ r.from_unit.name if r.from_unit else '-' }}</td>
+            <td class="text-end">{{ r.conversion_factor|qty_vn(4) }}</td>
+            <td class="text-center">
+              1 {{ r.from_unit.name if r.from_unit else '' }} = {{ r.conversion_factor|qty_vn(4) }} {{ r.to_unit.name if r.to_unit else '' }}
+            </td>
+            <td class="text-center">
+              <a href="{{ url_for('settings.system.edit_unit_conversion', id=r.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
+                <i class="fas fa-edit"></i>
+              </a>
+              <form method="POST" action="{{ url_for('settings.system.delete_unit_conversion', id=r.id) }}" class="d-inline"
+                    onsubmit="return confirm('Xóa quy đổi này?')">
+                <button class="btn btn-sm btn-outline-danger py-0 px-2"><i class="fas fa-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">Chưa có dữ liệu quy đổi.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

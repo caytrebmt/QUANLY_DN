@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Báo giá {{ quotation.code }}{% endblock %}
+{% block page_title %}<i class="fas fa-file-signature me-2 text-primary"></i>Báo giá: {{ quotation.code }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Chi tiết bảng báo giá</span>
+    <div class="d-flex gap-2 flex-wrap">
+      {% if not quotation.stock_out_id %}
+      <a href="{{ url_for('quotations.edit', id=quotation.id) }}" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-edit me-1"></i>Sửa
+      </a>
+      <form method="POST" action="{{ url_for('quotations.set_status', id=quotation.id, status='sent') }}" class="d-inline">
+        <button class="btn btn-sm btn-outline-info"><i class="fas fa-paper-plane me-1"></i>Đã gửi</button>
+      </form>
+      <form method="POST" action="{{ url_for('quotations.set_status', id=quotation.id, status='accepted') }}" class="d-inline">
+        <button class="btn btn-sm btn-outline-success"><i class="fas fa-check me-1"></i>Khách chấp nhận</button>
+      </form>
+      {% endif %}
+      <button type="button"
+        data-print-url="{{ url_for('quotations.print_html', id=quotation.id) }}"
+        class="btn btn-sm btn-outline-secondary btn-erp-print">
+        <i class="fas fa-print me-1"></i>In PDF
+      </button>
+      <a href="{{ url_for('quotations.index') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+      </a>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-3"><small class="text-muted">Số báo giá</small><div class="fw-bold">{{ quotation.code }}</div></div>
+      <div class="col-md-3"><small class="text-muted">Ngày</small><div class="fw-bold">{{ quotation.date|dateformat }}</div></div>
+      <div class="col-md-3"><small class="text-muted">Hiệu lực</small><div class="fw-bold">{{ quotation.valid_until|dateformat if quotation.valid_until else '-' }}</div></div>
+      <div class="col-md-3"><small class="text-muted">Trạng thái</small><div><span class="badge bg-secondary">{{ quotation.status|status_label }}</span></div></div>
+      <div class="col-md-6">
+        <small class="text-muted">Người nhận báo giá</small>
+        <div class="fw-bold">{{ quotation.recipient_name or (quotation.customer.name if quotation.customer else 'Báo giá chung') }}</div>
+      </div>
+      <div class="col-md-3"><small class="text-muted">MST</small><div>{{ quotation.customer.tax_code if quotation.customer else '-' }}</div></div>
+      <div class="col-md-3"><small class="text-muted">Điện thoại</small><div>{{ quotation.recipient_phone or (quotation.customer.phone if quotation.customer else '-') }}</div></div>
+      <div class="col-md-6"><small class="text-muted">Địa chỉ</small><div>{{ quotation.recipient_address or (quotation.customer.address if quotation.customer else '-') }}</div></div>
+      <div class="col-md-3"><small class="text-muted">Email</small><div>{{ quotation.recipient_email or (quotation.customer.email if quotation.customer else '-') }}</div></div>
+      <div class="col-md-12"><small class="text-muted">Điều khoản</small><div>{{ quotation.terms or '-' }}</div></div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-erp mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Mã hàng</th>
+            <th>Tên hàng hóa</th>
+            <th>ĐVT</th>
+            <th class="text-end">Số lượng</th>
+            <th class="text-end">Đơn giá</th>
+            <th class="text-end">Thành tiền</th>
+            {% if quotation.vat_mode != 'grouped' %}
+            <th class="text-center">VAT%</th>
+            <th class="text-end">Tiền VAT</th>
+            <th class="text-end">Tổng dòng</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><code>{{ item.product.code if item.product else '' }}</code></td>
+            <td>{{ item.product.name if item.product else '' }}</td>
+            <td>{{ item.unit.name if item.unit else (item.product.get_unit_name() if item.product else '') }}</td>
+            <td class="text-end">{{ qty_display_map.get(item.id, item.quantity|qty_vn) }}</td>
+            <td class="text-end">{{ item.unit_price|currency }}</td>
+            <td class="text-end">{{ item.amount|currency }}</td>
+            {% if quotation.vat_mode != 'grouped' %}
+            <td class="text-center">{{ item.vat_rate|number(0) }}%</td>
+            <td class="text-end text-info">{{ item.vat_amount|currency }}</td>
+            <td class="text-end fw-bold">{{ item.total_amount|currency }}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="6" class="text-end">Tổng tiền hàng:</td>
+            <td class="text-end">{{ quotation.subtotal|currency }}</td>
+            {% if quotation.vat_mode != 'grouped' %}<td></td><td class="text-end text-info">{{ quotation.vat_amount|currency }}</td><td class="text-end text-primary">{{ quotation.total_amount|currency }}</td>{% endif %}
+          </tr>
+          {% if quotation.vat_mode == 'grouped' %}
+          <tr><td colspan="6" class="text-end">VAT ({{ quotation.vat_rate_grouped|number(0) }}%):</td><td class="text-end text-info">{{ quotation.vat_amount|currency }}</td></tr>
+          <tr><td colspan="6" class="text-end">Tổng báo giá:</td><td class="text-end text-primary fs-6">{{ quotation.total_amount|currency }}</td></tr>
+          {% endif %}
+        </tfoot>
+      </table>
+    </div>
+
+    {% if quotation.stock_out_id %}
+    <div class="alert alert-success mt-3 mb-0">
+      <i class="fas fa-check-circle me-1"></i>Đã chuyển thành
+      <a href="{{ url_for('stock_out.detail', id=quotation.stock_out_id) }}" class="fw-bold">phiếu xuất</a>.
+    </div>
+    {% elif warehouses %}
+    <form method="POST" action="{{ url_for('quotations.convert_to_stock_out', id=quotation.id) }}" class="row g-2 align-items-end mt-3 no-print"
+          onsubmit="return confirm('Chuyển báo giá này thành phiếu xuất nháp?');">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Kho xuất khi chuyển phiếu</label>
+        <select name="warehouse_id" class="form-select" required>
+          {% for w in warehouses %}
+          <option value="{{ w.id }}">{{ w.code }} - {{ w.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-success"><i class="fas fa-share-square me-1"></i>Chuyển phiếu xuất</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

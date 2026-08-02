@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Cấu hình hệ thống{% endblock %}
+{% block page_title %}Cấu hình hệ thống{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <form method="POST">
+
+      {# --- Thông số chung --- #}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="fas fa-cogs text-primary"></i> Thông số chung
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">VAT mặc định (%)</label>
+              <input type="number" name="DEFAULT_VAT" class="form-control"
+                     value="{{ config.get('DEFAULT_VAT','10') }}" min="0" max="100">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Kho mặc định</label>
+              <select name="DEFAULT_WAREHOUSE" class="form-select">
+                {% for wh in warehouses %}
+                <option value="{{ wh.id }}"
+                  {% if config.get('DEFAULT_WAREHOUSE','') == wh.id|string %}selected{% endif %}>
+                  {{ wh.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Đơn vị tiền tệ</label>
+              <select name="CURRENCY" class="form-select">
+                <option value="VND" {% if config.get('CURRENCY')=='VND' %}selected{% endif %}>VND</option>
+                <option value="USD" {% if config.get('CURRENCY')=='USD' %}selected{% endif %}>USD</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Cho phép tồn kho âm</label>
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" name="ALLOW_NEGATIVE_STOCK"
+                       value="1" id="negStock"
+                       {% if config.get('ALLOW_NEGATIVE_STOCK','1')=='1' %}checked{% endif %}>
+                <label class="form-check-label" for="negStock">Bật</label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# --- Prefix số phiếu --- #}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="fas fa-file-alt text-primary"></i> Prefix số phiếu tự động
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            {% set prefixes = [
+              ('PREFIX_STOCK_IN',  'Phiếu nhập kho',  'NK'),
+              ('PREFIX_STOCK_OUT', 'Phiếu xuất kho',  'XK'),
+              ('PREFIX_PAYMENT',   'Phiếu thu',        'PT'),
+              ('PREFIX_RECEIPT',   'Phiếu chi',        'PC'),
+              ('PREFIX_JOURNAL',   'Bút toán',         'BT'),
+            ] %}
+            {% for key, label, default in prefixes %}
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ label }}</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                <input type="text" name="{{ key }}" class="form-control"
+                       value="{{ config.get(key, default) }}"
+                       style="text-transform:uppercase" maxlength="10">
+              </div>
+              <small class="text-muted">VD: {{ config.get(key,default) }}-20260318-001</small>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i> Lưu cấu hình
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

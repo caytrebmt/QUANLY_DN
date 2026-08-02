@@ -1,0 +1,122 @@
+{% extends "base.html" %} {% block title %}Báo cáo Kết quả Kinh doanh{%
+endblock %} {% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="fas fa-chart-line me-2"></i>BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH
+    </h5>
+    <div class="btn-group">
+      <a
+        href="{{ url_for('reports.income_statement', from_date=from_date, to_date=to_date) }}"
+        class="btn btn-sm btn-outline-secondary"
+      >
+        <i class="fas fa-redo"></i> Làm mới
+      </a>
+      <button
+        type="button"
+        class="btn btn-sm btn-success"
+        onclick="exportExcel()"
+      >
+        <i class="fas fa-file-excel"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <!-- Filter Form -->
+    <form class="row g-3 mb-4" method="get" id="filterForm">
+      <div class="col-md-3">
+        <label class="form-label">Từ ngày:</label>
+        <input
+          type="date"
+          name="from_date"
+          class="form-control"
+          value="{{ from_date }}"
+          required
+        />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Đến ngày:</label>
+        <input
+          type="date"
+          name="to_date"
+          class="form-control"
+          value="{{ to_date }}"
+          required
+        />
+      </div>
+      <div class="col-md-2 align-self-end">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-search"></i> Xem báo cáo
+        </button>
+      </div>
+    </form>
+
+    <!-- Report Table -->
+    <div class="table-responsive">
+      <table class="table table-erp table-bordered table-sm table-hover" id="incomeTable" data-advanced-table="light">
+        <thead class="table-light">
+          <tr>
+            <th width="10%" class="text-center">Mã số</th>
+            <th width="70%">Chỉ tiêu</th>
+            <th width="20%" class="text-end">Số tiền (VND)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in data %} {% if item.ma_so in ['01', '10', '20', '30',
+          '40', '50', '60'] %}
+          <!-- Dòng tổng hợp - in đậm -->
+          <tr class="table-secondary fw-bold">
+            <td class="text-center"><strong>{{ item.ma_so }}</strong></td>
+            <td><strong>{{ item.chi_tieu }}</strong></td>
+            <td class="text-end fw-bold">{{ item.so_tien:,.0f }}</td>
+          </tr>
+          {% elif item.ma_so.startswith('0') or item.ma_so.startswith('1') and
+          item.ma_so != '10' %}
+          <!-- Dòng chi tiết - indent -->
+          <tr>
+            <td class="text-center">{{ item.ma_so }}</td>
+            <td class="ps-4">{{ item.chi_tieu }}</td>
+            <td class="text-end">{{ item.so_tien:,.0f }}</td>
+          </tr>
+          {% else %}
+          <!-- Dòng khác -->
+          <tr>
+            <td class="text-center">{{ item.ma_so }}</td>
+            <td>{{ item.chi_tieu }}</td>
+            <td class="text-end">{{ item.so_tien:,.0f }}</td>
+          </tr>
+          {% endif %} {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Notes -->
+    <div class="alert alert-info mt-3 mb-0">
+      <i class="fas fa-info-circle me-2"></i>
+      <strong>Ghi chú:</strong> Báo cáo được lập theo mẫu Phụ lục I Thông tư
+      99/2025/TT-BTC. Số liệu chỉ bao gồm các nghiệp vụ đã được
+      <strong>xác nhận (posted)</strong>.
+    </div>
+  </div>
+</div>
+
+<script>
+  function exportExcel() {
+    const url =
+      "{{ url_for('reports.income_statement', from_date=from_date, to_date=to_date, _external=True) }}&export=1";
+    window.location.href = url.replace(
+      "/income-statement",
+      "/export/income-statement.xlsx",
+    );
+  }
+
+  // Auto-submit form when date changes (optional)
+  document.querySelectorAll('input[type="date"]').forEach((input) => {
+    input.addEventListener("change", function () {
+      // Uncomment below to auto-submit on date change
+      // document.getElementById('filterForm').submit();
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends "base.html" %} {% block title %}Sao lưu / Phục hồi DB{% endblock %}
+{% block page_title %}<i class="fas fa-database me-2"></i>Sao lưu / Phục hồi
+Dữ liệu{% endblock %} {% block content %}
+
+<div class="row g-3">
+  <div class="col-md-3">
+    <div class="list-group">
+       <a
+        href="{{ url_for('settings.system.index') }}"
+        class="list-group-item list-group-item-action"
+      >
+        <i class="fas fa-sliders-h me-2"></i>Cấu hình chung
+      </a>
+      <a
+        href="{{ url_for('settings.users.users_list') }}"
+        class="list-group-item list-group-item-action"
+      >
+        <i class="fas fa-users me-2"></i>Quản lý người dùng
+      </a>
+      <a
+        href="{{ url_for('settings.menus.menus') }}"
+        class="list-group-item list-group-item-action"
+      >
+        <i class="fas fa-bars me-2"></i>Cấu hình menu
+      </a>
+      <a
+        href="{{ url_for('settings.system.unit_conversions') }}"
+        class="list-group-item list-group-item-action"
+      >
+        <i class="fas fa-ruler-combined me-2"></i>Quy đổi đơn vị
+      </a>
+      <a
+        href="{{ url_for('settings.notifications.notifications_list') }}"
+        class="list-group-item list-group-item-action"
+      >
+        <i class="fas fa-bell me-2"></i>Mẫu thông báo
+      </a>
+      <a
+        href="{{ url_for('settings.backup.db_tools') }}"
+        class="list-group-item list-group-item-action active"
+      >
+        <i class="fas fa-database me-2"></i>Backup / Restore DB
+      </a>
+    </div>
+  </div>
+  </ul>
+  <div class="col-md-9">
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="fas fa-download text-success"></i>
+        Sao lưu dữ liệu
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Thực hiện ngay một bản backup định dạng .sql hoặc .dump. File sẽ được lưu
+          vào thư mục <code>backups/</code> cùng thư mục gốc web. Yêu cầu máy chủ đã cài
+          <code>pg_dump</code> và có trong PATH.
+        </p>
+        <form method="POST" action="{{ url_for('settings.backup.db_backup') }}">
+          <div class="mb-3" style="max-width: 280px">
+            <label class="form-label fw-semibold">Định dạng backup</label>
+            <select name="backup_format" class="form-select form-select-sm">
+              <option value="plain">Plain SQL (.sql)</option>
+              <option value="custom">Custom dump (.dump)</option>
+            </select>
+          </div>
+          <button class="btn btn-success">
+            <i class="fas fa-database me-1"></i>Tạo file backup
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="fas fa-upload text-danger"></i>
+        Phục hồi dữ liệu
+      </div>
+      <div class="card-body">
+        <p class="text-muted small">
+          Cảnh báo: phục hồi sẽ ghi đè dữ liệu hiện tại. Nên backup trước khi
+          restore. Yêu cầu <code>psql</code> / <code>pg_restore</code> trong PATH.
+          Nhận file <code>.sql</code> hoặc <code>.dump</code>.
+        </p>
+        <form
+          method="POST"
+          action="{{ url_for('settings.backup.db_restore') }}"
+          enctype="multipart/form-data"
+        >
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Chọn file .sql / .dump</label>
+            <input
+              type="file"
+              name="sql_file"
+              accept=".sql,.dump"
+              class="form-control"
+              required
+            />
+          </div>
+          <button
+            class="btn btn-danger"
+            onclick="return confirm('Phục hồi sẽ ghi đè dữ liệu hiện tại. Tiếp tục?');"
+          >
+            <i class="fas fa-undo-alt me-1"></i>Restore từ file
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="fas fa-shield-check text-primary"></i>
+        Verify DB
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Kiểm tra kết nối DB và khả năng đọc các bảng trọng yếu sau backup/restore.
+        </p>
+        <form method="POST" action="{{ url_for('settings.backup.db_verify') }}">
+          <button class="btn btn-outline-primary">
+            <i class="fas fa-vial me-1"></i>Chạy verify
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="fas fa-folder-open text-secondary"></i>
+        Danh sách backup
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Tên file</th>
+                <th class="text-end">Dung lượng (KB)</th>
+                <th class="text-end">Cập nhật</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in backup_files %}
+              <tr>
+                <td><code>{{ f.name }}</code></td>
+                <td class="text-end">{{ f.size_kb }}</td>
+                <td class="text-end">{{ f.updated_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-3">Chưa có file backup</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+</div>
+{% endblock %}

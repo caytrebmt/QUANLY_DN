@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Báo cáo nhập mua{% endblock %}
+{% block page_title %}<i class="fas fa-truck me-2"></i>Báo cáo nhập mua theo nhà cung cấp{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Tổng hợp nhập hàng từ nhà cung cấp</span>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-2"><label class="form-label small">Từ ngày</label>
+        <input type="date" name="from_date" value="{{ from_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2"><label class="form-label small">Đến ngày</label>
+        <input type="date" name="to_date" value="{{ to_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-auto d-flex align-items-end">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Xem</button>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+      <thead>
+        <tr>
+          <th>Mã NCC</th><th>Tên nhà cung cấp</th>
+          <th class="text-center">Số phiếu</th>
+          <th class="text-end">Tiền hàng</th>
+          <th class="text-end">Tiền VAT</th>
+          <th class="text-end">Tổng nhập</th>
+          <th class="text-end">Đã TT</th>
+          <th class="text-end">Còn lại</th>
+          <th class="text-end">Công nợ hiện tại</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><code>{{ r.supplier.code }}</code></td>
+          <td class="fw-semibold">{{ r.supplier.name }}</td>
+          <td class="text-center"><span class="badge bg-info">{{ r.order_count }}</span></td>
+          <td class="text-end">{{ r.subtotal|currency }}</td>
+          <td class="text-end text-info">{{ r.vat|currency }}</td>
+          <td class="text-end fw-bold text-primary">{{ r.total|currency }}</td>
+          <td class="text-end text-success">{{ r.paid|currency }}</td>
+          <td class="text-end {{ 'text-danger fw-bold' if r.balance > 0 else '' }}">
+            {{ r.balance|currency if r.balance > 0 else '-' }}
+          </td>
+          <td class="text-end {{ 'text-warning fw-bold' if r.debt > 0 else '' }}">
+            {{ r.debt|currency if r.debt > 0 else '-' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu nhập hàng trong kỳ này</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if rows %}
+      <tfoot class="table-dark fw-bold">
+        <tr>
+          <td colspan="3" class="text-end">Tổng:</td>
+          <td class="text-end">{{ rows|sum(attribute='subtotal')|currency }}</td>
+          <td class="text-end">{{ rows|sum(attribute='vat')|currency }}</td>
+          <td class="text-end text-warning">{{ rows|sum(attribute='total')|currency }}</td>
+          <td class="text-end">{{ rows|sum(attribute='paid')|currency }}</td>
+          <td class="text-end text-warning">{{ rows|sum(attribute='balance')|currency }}</td>
+          <td class="text-end text-warning">{{ rows|sum(attribute='debt')|currency }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

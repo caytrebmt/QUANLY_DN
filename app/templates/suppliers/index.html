@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Nhà cung cấp{% endblock %}
+{% block page_title %}<i class="fas fa-truck me-2"></i>Quản lý nhà cung cấp{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Danh sách nhà cung cấp</span>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('suppliers.download_template') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-download me-1"></i>Mẫu import
+      </a>
+      <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importModal">
+        <i class="fas fa-file-excel me-1"></i>Import Excel
+      </button>
+      <a href="{{ url_for('suppliers.export_excel') }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>Xuất Excel
+      </a>
+      <a href="{{ url_for('suppliers.create') }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-plus me-1"></i>Thêm NCC
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-5">
+        <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
+               placeholder="Tìm theo mã, tên, SĐT, MST...">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Tìm</button>
+        <a href="{{ url_for('suppliers.index') }}" class="btn btn-sm btn-outline-secondary ms-1">Reset</a>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Mã NCC</th><th>Tên nhà cung cấp</th><th>Điện thoại</th>
+            <th>Email</th><th>Mã số thuế</th><th>Người LH</th>
+            <th class="text-end">Công nợ</th><th class="text-center">TT</th>
+            <th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in suppliers.items %}
+          <tr>
+            <td><code>{{ s.code }}</code></td>
+            <td class="fw-semibold">{{ s.name }}</td>
+            <td>{{ s.phone or '-' }}</td>
+            <td>{{ s.email or '-' }}</td>
+            <td>{{ s.tax_code or '-' }}</td>
+            <td>{{ s.contact_person or '-' }}</td>
+            <td class="text-end {% if s.get_total_debt() > 0 %}text-danger fw-bold{% endif %}">
+              {{ s.get_total_debt()|int|currency if s.get_total_debt() > 0 else '-' }}
+            </td>
+            <td class="text-center">
+              {% if s.is_active %}<span class="badge bg-success">Hoạt động</span>
+              {% else %}<span class="badge bg-secondary">Ngừng</span>{% endif %}
+            </td>
+            <td class="text-center no-print">
+              <a href="{{ url_for('suppliers.edit', id=s.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
+                <i class="fas fa-edit"></i>
+              </a>
+              <form method="POST" action="{{ url_for('suppliers.delete', id=s.id) }}" class="d-inline"
+                    onsubmit="return confirm('Xóa NCC {{ s.code }}?')">
+                <button class="btn btn-sm btn-outline-danger py-0 px-2"><i class="fas fa-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if suppliers.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ suppliers.total }} nhà cung cấp</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in suppliers.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==suppliers.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('suppliers.index', page=page, search=search) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-file-excel me-2"></i>Import nhà cung cấp</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('suppliers.import_excel') }}" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="alert alert-info small">
+            Tải <a href="{{ url_for('suppliers.download_template') }}">file mẫu</a> để biết định dạng đúng.
+          </div>
+          <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="submit" class="btn btn-success"><i class="fas fa-upload me-1"></i>Import</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% macro erp_badge(order) %}
+  {% if order.erp_status == 'Đã xuất kho' %}
+    <span class="badge-s badge-success"><i class="fas fa-check-circle"></i> {{ order.erp_status }}</span>
+  {% elif order.erp_status == 'Đã hủy' %}
+    <span class="badge-s badge-danger"><i class="fas fa-times-circle"></i> {{ order.erp_status }}</span>
+  {% elif order.erp_status %}
+    <span class="badge-s badge-warning"><i class="fas fa-clock"></i> {{ order.erp_status }}</span>
+  {% else %}
+    <span class="badge-s badge-secondary"><i class="fas fa-hourglass-half"></i> Chưa xuất</span>
+  {% endif %}
+  {% if order.erp_note %}
+    <small class="d-block text-muted" style="font-size:11px;margin-top:2px">{{ order.erp_note }}</small>
+  {% endif %}
+{% endmacro %}
+
+{% macro product_card(listing, show_wishlist=True) %}
+  <div class="p-card">
+    <div class="p-card-badges">
+      {% if listing.stock_cached == 0 %}
+        <span class="badge-s badge-danger">Hết hàng</span>
+      {% elif listing.stock_cached <= 5 %}
+        <span class="badge-s badge-warning">Sắp hết</span>
+      {% else %}
+        <span class="badge-s badge-new">Mới</span>
+      {% endif %}
+      {% if listing.old_price %}
+        <span class="badge-s badge-sale">-{{ "{:,.0f}".format((listing.old_price - listing.display_retail_price()) / listing.old_price * 100) }}%</span>
+      {% endif %}
+    </div>
+    {% if show_wishlist %}
+    <button class="p-card-wish" onclick="toggleWish(this, {{ listing.id }})" title="Yêu thích">
+      <i class="fas fa-heart"></i>
+    </button>
+    {% endif %}
+    <div class="p-card-img-w">
+      <a href="{{ url_for('shop.product_detail', slug=listing.slug) }}">
+        <img class="p-card-img"
+             src="{{ listing.image_url or listing.product.image_url or url_for('shop.product_placeholder', code=listing.product.code if listing.product else 'ERP', name=listing.display_name()) }}"
+             alt="{{ listing.display_name() }}" loading="lazy" />
+      </a>
+      <button class="p-card-add-hover" onclick="ajaxAddToCart({{ listing.id }}, 1, this)">
+        <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+      </button>
+    </div>
+    <div class="p-card-body">
+      <a href="{{ url_for('shop.product_detail', slug=listing.slug) }}" class="p-card-name">
+        {{ listing.display_name() }}
+      </a>
+      <div class="p-card-price-row">
+        {% if listing.contact_for_price or not listing.display_retail_price() %}
+          <span class="p-card-price">Liên hệ</span>
+        {% else %}
+          <span class="p-card-price">{{ listing.display_retail_price()|currency }}</span>
+          {% if listing.old_price %}
+          <span class="p-card-price-old">{{ listing.old_price|currency }}</span>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro checkout_step(active, done, num, label, icon='') %}
+  <div class="step-item {% if done %}done{% elif active %}active{% endif %}">
+    <span class="step-num">
+      {% if done %}<i class="fas fa-check" style="font-size:9px"></i>{% else %}{{ num }}{% endif %}
+    </span>
+    {% if icon %}<i class="fas {{ icon }}" style="margin-right:4px"></i>{% endif %}
+    {{ label }}
+  </div>
+{% endmacro %}
+
+{% macro trust_badge(icon, color, title, desc) %}
+  <div class="trust-badge-item">
+    <i class="fas {{ icon }}" style="color: {{ color }}"></i>
+    <div>
+      <div style="font-weight:700;font-size:13px;color:var(--ink)">{{ title }}</div>
+      <div style="font-size:11px;color:var(--muted-2)">{{ desc }}</div>
+    </div>
+  </div>
+{% endmacro %}

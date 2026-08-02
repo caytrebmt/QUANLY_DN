@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if menu else 'Thêm' }} menu{% endblock %}
+{% block page_title %}
+  <i class="fas fa-bars me-2"></i>
+  {{ 'Sửa menu: ' + menu.code if menu else 'Thêm menu mới' }}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-7">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>{{ 'Cập nhật' if menu else 'Tạo menu mới' }}</span>
+        <a href="{{ url_for('settings.menus.menus') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Danh sách menu
+        </a>
+      </div>
+
+      <form method="POST">
+        <div class="card-body">
+          <div class="row g-3">
+
+            <!-- Mã menu -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ _('Menu code') }} <span class="text-danger">*</span></label>
+              <input type="text" name="code" class="form-control text-uppercase fw-bold"
+                     value="{{ menu.code if menu else '' }}"
+                     {% if menu %}readonly{% endif %}
+                     required placeholder="VD: PRODUCTS">
+              <div class="form-text">Không thể thay đổi sau khi tạo.</div>
+            </div>
+
+            <!-- Tên menu -->
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">{{ _('Display name') }} <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ menu.name if menu else '' }}"
+                     required placeholder="VD: Hàng hóa, Phiếu nhập kho">
+            </div>
+
+            <!-- Menu cha -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Menu cha</label>
+              <select name="parent_id" class="form-select">
+                <option value="">— Là menu nhóm (cấp cao nhất) —</option>
+                {% for m in all_menus if not m.parent_id %}
+                <option value="{{ m.id }}"
+                        {{ 'selected' if menu and menu.parent_id == m.id }}>
+                  <i class="fas fa-folder"></i> {{ m.code }} — {{ m.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Module -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="fas fa-cube me-1 text-primary"></i>
+                Module chức năng <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="module" class="form-control"
+                     value="{{ menu.module if menu else '' }}"
+                     required placeholder="VD: warehouse, sales, accounting">
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                <b>Module quyết định ai được thấy menu này.</b> Menu hiển thị với user có quyền
+                <b>Xem</b> module tương ứng (tại <i>Cài đặt → Quản lý users</i>). Để trống → chỉ <b>Admin</b> thấy.
+              </div>
+            </div>
+
+            <!-- URL -->
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">URL đường dẫn</label>
+              <input type="text" name="url" class="form-control"
+                     value="{{ menu.url if menu else '' }}"
+                     placeholder="VD: /products/, /stock-in/">
+              <div class="form-text">Để trống nếu là menu nhóm (folder).</div>
+            </div>
+
+            <!-- Thứ tự -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Thứ tự</label>
+              <input type="number" name="order_no" class="form-control"
+                     value="{{ menu.order_no if menu else 0 }}" min="0" max="9999">
+              <div class="form-text">Số nhỏ → hiển thị trước.</div>
+            </div>
+
+            <!-- Icon picker -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Icon FontAwesome</label>
+              <div class="input-group mb-2">
+                <span class="input-group-text" style="min-width:42px">
+                  <i class="{{ menu.icon if menu else 'fas fa-circle' }}" id="iconEl"></i>
+                </span>
+                <input type="text" name="icon" id="iconInput" class="form-control"
+                       value="{{ menu.icon if menu else 'fas fa-circle' }}"
+                       placeholder="fas fa-box">
+
+                {# Link mở danh sách icon #}
+                <a href="{{ url_for('static', filename='icon-picker/picker.html') }}"
+                   target="_blank"
+                   class="btn btn-outline-secondary">
+                  <i class="fas fa-icons"></i>
+                </a>
+              </div>
+              <!-- Quick icon picker -->
+              <div class="d-flex flex-wrap gap-1">
+                {% for icon in [
+                  'fas fa-tachometer-alt','fas fa-box','fas fa-boxes','fas fa-truck',
+                  'fas fa-users','fas fa-user','fas fa-store','fas fa-warehouse',
+                  'fas fa-chart-bar','fas fa-chart-line','fas fa-calculator',
+                  'fas fa-percent','fas fa-file-invoice','fas fa-file-invoice-dollar',
+                  'fas fa-receipt','fas fa-book','fas fa-sitemap','fas fa-cogs',
+                  'fas fa-building','fas fa-bell','fas fa-exchange-alt',
+                  'fas fa-arrow-circle-down','fas fa-arrow-circle-up','fas fa-history',
+                  'fas fa-satellite-dish','fas fa-hand-holding-usd','fas fa-tags',
+                  'fas fa-ruler','fas fa-box-open','fas fa-balance-scale',
+                ] %}
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary icon-pick py-0 px-2"
+                        data-icon="{{ icon }}" title="{{ icon }}">
+                  <i class="{{ icon }}"></i>
+                </button>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════ -->
+            <!-- GIẢI THÍCH PHÂN QUYỀN (không còn chọn vai trò ở đây) -->
+            <!-- ═══════════════════════════════════════════════════ -->
+            <div class="col-12">
+              <div class="alert alert-info d-flex gap-2 align-items-start mb-0 py-2">
+                <i class="fas fa-lightbulb mt-1 text-primary"></i>
+                <div class="small">
+                  <b>Cách phân quyền menu hoạt động:</b> hiển thị menu được tự động suy ra từ
+                  <b>Module</b> ở trên cộng với quyền của từng user — <u>không cấu hình vai trò tại đây</u>.
+                  Để ẩn/hiện menu riêng cho một user cụ thể, dùng mục <i>Menu hiển thị</i> trong
+                  <b>Quản lý users</b>.
+                </div>
+              </div>
+            </div>
+
+            <!-- Trạng thái -->
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
+                       {{ 'checked' if (not menu or menu.is_active) else '' }}>
+                <label class="form-check-label fw-semibold" for="isActive">
+                  Hiển thị menu này trong thanh điều hướng
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+          <a href="{{ url_for('settings.menus.menus') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+          </a>
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-save me-1"></i>
+            {{ 'Cập nhật menu' if menu else 'Tạo menu' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Icon picker ───────────────────────────────────────────────
+document.getElementById('iconInput').addEventListener('input', function() {
+  document.getElementById('iconEl').className = this.value.trim() || 'fas fa-circle';
+});
+document.querySelectorAll('.icon-pick').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const icon = this.dataset.icon;
+    document.getElementById('iconInput').value = icon;
+    document.getElementById('iconEl').className = icon;
+  });
+});
+</script>
+{% endblock %}

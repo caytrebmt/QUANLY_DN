@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Sửa tồn đầu kỳ{% endblock %}
+{% block page_title %}<i class="fas fa-edit me-2"></i>Sửa tồn đầu kỳ{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-8">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-edit me-2"></i>
+        Sửa tồn đầu kỳ — {{ record.product.code if record.product else '' }}
+      </div>
+      <form method="POST">
+        <div class="card-body">
+          <div class="row g-3">
+
+            <!-- Hàng hóa -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Hàng hóa <span class="text-danger">*</span></label>
+              <select name="product_id" class="form-select select2" required>
+                <option value="">-- Chọn hàng --</option>
+                {% for p in products %}
+                <option value="{{ p.id }}"
+                  {% if record.product_id == p.id %}selected{% endif %}
+                  data-code="{{ p.code }}">
+                  {{ p.code }} — {{ p.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Kho -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Kho <span class="text-danger">*</span></label>
+              <select name="warehouse_id" class="form-select select2" required>
+                <option value="">-- Chọn kho --</option>
+                {% for w in warehouses %}
+                <option value="{{ w.id }}" 
+                  {% if record.warehouse_id == w.id %}selected{% endif %}>
+                  {{ w.code }} — {{ w.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Ngày đầu kỳ -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Ngày đầu kỳ <span class="text-danger">*</span></label>
+              <input type="date" name="period_date" class="form-control" required
+                     value="{{ record.period_date.isoformat() if record.period_date else '' }}">
+            </div>
+
+            <!-- Số lượng -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Số lượng <span class="text-danger">*</span></label>
+              <input type="number" name="quantity" class="form-control text-end" step="0.001" min="0"
+                     value="{{ record.quantity|float }}" required id="editQty">
+            </div>
+
+            <!-- Giá vốn -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Giá vốn</label>
+              <div class="input-group">
+                <input type="number" name="unit_cost" class="form-control text-end" step="1" min="0"
+                       value="{{ record.unit_cost|float|int }}" id="editCost">
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+
+            <!-- Giá trị (auto calc) -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Giá trị</label>
+              <div class="input-group">
+                <input type="text" class="form-control text-end" id="editAmount" readonly
+                       value="{{ (record.quantity * record.unit_cost)|int|number }}">
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+
+            <!-- Ghi chú -->
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Ghi chú</label>
+              <input type="text" name="note" class="form-control"
+                     value="{{ record.note or '' }}" placeholder="Ghi chú (tùy chọn)">
+            </div>
+
+          </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a href="{{ url_for('opening_stock.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>Cập nhật
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function() {
+  $('.select2').select2({theme: 'bootstrap-5', width: '100%'});
+
+  // Auto calculate amount
+  function calcAmount() {
+    const qty  = parseFloat($('#editQty').val()) || 0;
+    const cost = parseFloat($('#editCost').val()) || 0;
+    $('#editAmount').val((qty * cost).toLocaleString('vi-VN'));
+  }
+  $('#editQty, #editCost').on('input', calcAmount);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Bảng báo giá{% endblock %}
+{% block page_title %}<i class="fas fa-file-signature me-2 text-primary"></i>Bảng báo giá{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Danh sách báo giá</span>
+    <a href="{{ url_for('quotations.create') }}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i>Tạo báo giá
+    </a>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-4">
+        <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
+               placeholder="Tìm số báo giá, ghi chú...">
+      </div>
+      <div class="col-md-3">
+        <select name="customer_id" class="form-select form-select-sm" id="customerSel">
+          <option value="">-- Tất cả khách hàng --</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}" {{ 'selected' if customer_id and customer_id==c.id|string }}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="status" class="form-select form-select-sm">
+          <option value="">-- Tất cả TT --</option>
+          <option value="draft" {{ 'selected' if status=='draft' }}>Nháp</option>
+          <option value="sent" {{ 'selected' if status=='sent' }}>Đã gửi</option>
+          <option value="accepted" {{ 'selected' if status=='accepted' }}>Đã chấp nhận</option>
+          <option value="converted" {{ 'selected' if status=='converted' }}>Đã chuyển phiếu xuất</option>
+          <option value="cancelled" {{ 'selected' if status=='cancelled' }}>Đã hủy</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Tìm</button>
+        <a href="{{ url_for('quotations.index') }}" class="btn btn-sm btn-outline-secondary ms-1">Reset</a>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Số báo giá</th>
+            <th>Ngày</th>
+            <th>Hiệu lực</th>
+            <th>Người nhận</th>
+            <th class="text-end">Tiền hàng</th>
+            <th class="text-end">VAT</th>
+            <th class="text-end">Tổng cộng</th>
+            <th class="text-center">TT</th>
+            <th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in quotations.items %}
+          <tr>
+            <td><a href="{{ url_for('quotations.detail', id=q.id) }}" class="fw-semibold">{{ q.code }}</a></td>
+            <td>{{ q.date|dateformat }}</td>
+            <td>{{ q.valid_until|dateformat if q.valid_until else '-' }}</td>
+            <td class="customer-name" title="{{ q.recipient_name or (q.customer.name if q.customer else 'Báo giá chung') }}">
+              {{ q.recipient_name or (q.customer.name if q.customer else 'Báo giá chung') }}
+            </td>
+            <td class="text-end">{{ q.subtotal|currency }}</td>
+            <td class="text-end text-info">{{ q.vat_amount|currency }}</td>
+            <td class="text-end fw-bold">{{ q.total_amount|currency }}</td>
+            <td class="text-center"><span class="badge bg-secondary">{{ q.status|status_label }}</span></td>
+            <td class="text-center no-print">
+              <a href="{{ url_for('quotations.detail', id=q.id) }}" class="btn btn-sm btn-outline-info py-0 px-2"><i class="fas fa-eye"></i></a>
+              {% if not q.stock_out_id %}
+              <a href="{{ url_for('quotations.edit', id=q.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="fas fa-edit"></i></a>
+              {% endif %}
+              <button type="button"
+                  class="btn btn-sm btn-outline-secondary py-0 px-2 btn-erp-print"
+                  data-print-url="{{ url_for('quotations.print_html', id=q.id) }}"
+                  title="In báo giá">
+                <i class="fas fa-print"></i>
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">Chưa có bảng báo giá</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if quotations.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ quotations.total }} báo giá</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in quotations.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==quotations.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('quotations.index', page=page, search=search, status=status, customer_id=customer_id) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">...</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+$(function() {
+  $('#customerSel').select2({ theme: 'bootstrap-5', placeholder: '-- Tất cả khách hàng --', allowClear: true, width: '100%' });
+});
+</script>
+{% endblock %}

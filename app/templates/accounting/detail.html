@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Chi tiết bút toán{{ entry.code }}{% endblock %}
+{% block page_title %}<i class="fas fa-book-open me-2"></i>Bút toán: {{ entry.code }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between">
+    <span>Chi tiết bút toán kế toán</span>
+    <a href="{{ url_for('accounting.index') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-3"><small class="text-muted">Số bút toán</small><div class="fw-bold">{{ entry.code }}</div></div>
+      <div class="col-md-3"><small class="text-muted">Ngày hạch toán</small><div class="fw-bold">{{ entry.date|dateformat }}</div></div>
+      <div class="col-md-3"><small class="text-muted">Chứng từ gốc</small><div><code>{{ entry.reference_code or '-' }}</code></div></div>
+      <div class="col-md-3"><small class="text-muted">Trạng thái</small>
+        <div><span class="badge {{ 'bg-success' if entry.status=='posted' else 'bg-secondary' }}">{{ 'Đã ghi sổ' if entry.status=='posted' else entry.status }}</span></div>
+      </div>
+      <div class="col-12"><small class="text-muted">Diễn giải</small><div class="fw-semibold">{{ entry.description }}</div></div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-erp mb-0" data-advanced-table="light">
+        <thead><tr>
+          <th>STT</th><th>Số TK</th><th>Tên tài khoản</th><th>Diễn giải</th>
+          <th class="text-end">Nợ</th><th class="text-end">Có</th>
+        </tr></thead>
+        <tbody>
+          {% for line in entry.lines %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><code>{{ line.account.code if line.account else '' }}</code></td>
+            <td>{{ line.account.name if line.account else '' }}</td>
+            <td>{{ line.description or '' }}</td>
+            <td class="text-end fw-bold">{{ line.debit|currency if line.debit else '-' }}</td>
+            <td class="text-end fw-bold">{{ line.credit|currency if line.credit else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="4" class="text-end">Tổng cộng:</td>
+            <td class="text-end text-primary">{{ entry.total_debit|currency }}</td>
+            <td class="text-end text-primary">{{ entry.total_credit|currency }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

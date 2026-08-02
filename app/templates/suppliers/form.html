@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if supplier else 'Thêm' }} nhà cung cấp{% endblock %}
+{% block page_title %}<i class="fas fa-truck me-2"></i>{{ 'Sửa: ' + supplier.code if supplier else 'Thêm nhà cung cấp mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <div class="card">
+      <div class="card-header">Thông tin nhà cung cấp</div>
+      <form method="POST">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Mã NCC <span class="text-danger">*</span></label>
+              <input type="text" name="code" class="form-control text-uppercase"
+                     value="{{ supplier.code if supplier else '' }}"
+                     {% if supplier %}readonly{% endif %} required placeholder="VD: NCC001">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Tên nhà cung cấp <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ supplier.name if supplier else '' }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Tên viết tắt</label>
+              <input type="text" name="short_name" class="form-control"
+                     value="{{ supplier.short_name if supplier else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Địa chỉ</label>
+              <input type="text" name="address" class="form-control"
+                     value="{{ supplier.address if supplier else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Điện thoại</label>
+              <input type="text" name="phone" class="form-control"
+                     value="{{ supplier.phone if supplier else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Fax</label>
+              <input type="text" name="fax" class="form-control"
+                     value="{{ supplier.fax if supplier else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" name="email" class="form-control"
+                     value="{{ supplier.email if supplier else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Website</label>
+              <input type="text" name="website" class="form-control"
+                     value="{{ supplier.website if supplier else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Mã số thuế</label>
+              <input type="text" name="tax_code" class="form-control"
+                     value="{{ supplier.tax_code if supplier else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Người liên hệ</label>
+              <input type="text" name="contact_person" class="form-control"
+                     value="{{ supplier.contact_person if supplier else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Số tài khoản NH</label>
+              <input type="text" name="bank_account" class="form-control"
+                     value="{{ supplier.bank_account if supplier else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Tên ngân hàng</label>
+              <input type="text" name="bank_name" class="form-control"
+                     value="{{ supplier.bank_name if supplier else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Thời hạn TT (ngày)</label>
+              <input type="number" name="payment_terms" class="form-control"
+                     value="{{ supplier.payment_terms if supplier else 30 }}" min="0" max="365">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Hạn mức tín dụng</label>
+              <div class="input-group">
+                <input type="number" name="credit_limit" class="form-control"
+                       value="{{ supplier.credit_limit|float|int if supplier else 0 }}" min="0" step="1000000">
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Ghi chú</label>
+              <textarea name="note" class="form-control" rows="2">{{ supplier.note if supplier else '' }}</textarea>
+            </div>
+            {% if supplier %}
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
+                       {{ 'checked' if supplier.is_active else '' }}>
+                <label class="form-check-label" for="isActive">Đang hoạt động</label>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a href="{{ url_for('suppliers.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if supplier else 'Lưu' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

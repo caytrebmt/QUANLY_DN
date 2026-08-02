@@ -1,0 +1,691 @@
+<!-- templates/shop/product_detail.html -->
+{% extends "shop/base.html" %} {% from "shop/macros/shop_macros.html" import
+trust_badge %} {% block title %}{{ listing.display_name() }}{% endblock %} {%
+block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <!-- Breadcrumb -->
+  <nav
+    class="flex items-center gap-2 text-sm text-gray-500 mb-6 overflow-x-auto pb-2"
+  >
+    <a href="{{ url_for('shop.catalog') }}" class="hover:text-accent"
+      >Trang chủ</a
+    >
+    <i class="fas fa-chevron-right text-xs"></i>
+    <a href="{{ url_for('shop.catalog') }}" class="hover:text-accent"
+      >Sản phẩm</a
+    >
+    <i class="fas fa-chevron-right text-xs"></i>
+    <span class="text-gray-800 font-medium truncate"
+      >{{ listing.display_name() }}</span
+    >
+  </nav>
+
+  <div class="flex flex-col lg:flex-row gap-8">
+    <!-- LEFT: Gallery -->
+    <div class="lg:w-1/2">
+      <div class="sticky top-24">
+        <!-- Main Image -->
+        <div class="bg-gray-50 rounded-2xl overflow-hidden mb-4 relative group">
+          {# main image URL #} {% set main_img = listing.display_image or
+          (listing.product.main_image if listing.product else None) or
+          url_for('shop.product_placeholder', code=(listing.product.code if
+          listing.product else 'ERP'), name=listing.display_name()) %}
+
+          <img
+            id="mainImage"
+            src="{{ main_img }}"
+            alt="{{ listing.display_name() }}"
+            class="w-full h-[420px] object-contain p-6 cursor-zoom-in transition-transform duration-300 group-hover:scale-105"
+            onclick="openZoomModal()"
+          />
+
+          <button
+            onclick="openZoomModal()"
+            class="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition"
+          >
+            <i class="fas fa-expand text-gray-600"></i>
+          </button>
+        </div>
+
+        <!-- Thumbnails (from ProductImage) -->
+        <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          {% if listing.product and listing.product.images %} {% set imgs =
+          listing.product.images|sort(attribute='sort_order') %} {% for img in
+          imgs %}
+          <div
+            class="thumb-item w-20 h-20 rounded-xl border {% if loop.first %}border-accent{% else %}border-gray-200 hover:border-accent{% endif %} overflow-hidden flex-shrink-0 cursor-pointer transition"
+            onclick="switchImage(this, '{{ img.image_url }}')"
+          >
+            <img
+              src="{{ img.image_url }}"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          {% endfor %} {% else %}
+          <div
+            class="thumb-item w-20 h-20 rounded-xl border-2 border-accent overflow-hidden flex-shrink-0 cursor-pointer"
+            onclick="switchImage(this, '{{ main_img }}')"
+          >
+            <img
+              src="{{ main_img }}"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Product Info -->
+    <div class="lg:w-1/2">
+      <!-- Badges -->
+      <div class="flex items-center gap-2 mb-3">
+        {% if listing.stock_cached > 0 and listing.stock_cached <= 5 %}
+        <span
+          class="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 rounded"
+          ><i class="fas fa-exclamation-triangle mr-1"></i>Sắp hết</span
+        >
+        {% endif %} {% if listing.stock_cached == 0 %}
+        <span
+          class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded"
+          ><i class="fas fa-times-circle mr-1"></i>Hết hàng</span
+        >
+        {% endif %}
+        <span
+          class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded"
+          ><i class="fas fa-check-circle mr-1"></i>Chính hãng</span
+        >
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-3">
+        {{ listing.display_name() }}
+      </h1>
+
+      <!-- SKU & Brand -->
+      <div class="flex items-center gap-3 mb-4 text-sm text-gray-500">
+        <span
+          >Mã: {{ listing.product.code if listing.product else 'N/A' }}</span
+        >
+        {% if listing.product and listing.product.brand %}
+        <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+        <span>Thương hiệu: {{ listing.product.brand }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Price -->
+      <div class="mb-6">
+        {% if listing.contact_for_price %}
+        <div class="text-2xl font-bold text-accent">Liên hệ</div>
+        <p class="text-sm text-gray-500 mt-1">
+          Vui lòng liên hệ để được báo giá tốt nhất
+        </p>
+        {% else %}
+        <div class="flex items-baseline gap-3 flex-wrap">
+          <span class="text-3xl font-bold text-primary"
+            >{{ listing.display_retail_price()|currency }}</span
+          >
+          {% if listing.compare_at_price %}
+          <span class="text-gray-400 line-through"
+            >{{ listing.compare_at_price|currency }}</span
+          >
+          <span
+            class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded"
+            >-{{ ((listing.compare_at_price - listing.display_retail_price()) /
+            listing.compare_at_price * 100)|int }}%</span
+          >
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <i class="fas fa-check-circle text-green-500 text-sm"></i>
+          <span class="text-sm text-gray-600">Đã bao gồm VAT</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Stock Status -->
+      <div class="flex items-center gap-2 mb-6 p-3 bg-gray-50 rounded-xl">
+        <i
+          class="fas fa-{% if listing.stock_cached > 0 %}check-circle text-green-500{% else %}times-circle text-red-500{% endif %}"
+        ></i>
+        <span class="text-sm">
+          {% if listing.stock_cached > 0 %}
+          <span class="text-green-600 font-medium">Còn hàng</span>
+          <span class="text-gray-500 ml-2"
+            >({{ listing.stock_cached }} sản phẩm)</span
+          >
+          {% else %}
+          <span class="text-red-600 font-medium">Hết hàng</span>
+          {% endif %}
+        </span>
+      </div>
+
+      <!-- Quantity & Actions -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Số lượng</label
+        >
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex items-center border border-gray-200 rounded-lg">
+            <button
+              onclick="changeQty(-1)"
+              class="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition"
+            >
+              -
+            </button>
+            <input
+              type="number"
+              id="qty"
+              value="1"
+              min="1"
+              max="{{ listing.stock_cached if listing.stock_cached > 0 else 999 }}"
+              class="w-16 h-10 text-center border-x border-gray-200 outline-none text-sm"
+            />
+            <button
+              onclick="changeQty(1)"
+              class="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition"
+            >
+              +
+            </button>
+          </div>
+          <button
+            onclick="addToCart()"
+            class="flex-1 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primaryDark transition flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-cart-plus"></i>
+            Thêm vào giỏ hàng
+          </button>
+          <button
+            onclick="toggleWishlist()"
+            class="w-12 h-12 rounded-xl border border-gray-200 flex items-center justify-center hover:border-accent transition group"
+          >
+            <i
+              id="wishlistIcon"
+              class="far fa-heart text-gray-400 group-hover:text-red-500 transition"
+            ></i>
+          </button>
+        </div>
+        <a
+          href="{{ url_for('shop.checkout') }}"
+          class="block w-full py-3 bg-accent text-white rounded-xl font-semibold text-center hover:bg-accentDark transition"
+        >
+          Mua ngay
+        </a>
+      </div>
+
+      <!-- Delivery Info -->
+      <div class="grid grid-cols-2 gap-3">
+        {{ trust_badge('fa-truck-fast', '#d4a373', 'Giao hàng 24h', 'Nội thành
+        HCM/HN') }} {{ trust_badge('fa-file-invoice', '#0f3b2c', 'Xuất VAT',
+        'Theo yêu cầu doanh nghiệp') }} {{ trust_badge('fa-undo-alt', '#f59e0b',
+        'Đổi trả 7 ngày', 'Lỗi sản xuất') }} {{ trust_badge('fa-shield-alt',
+        '#10b981', 'Bảo hành', '12 tháng chính hãng') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Section -->
+  <div class="mt-12">
+    <div
+      class="border-b border-gray-200 flex gap-6 overflow-x-auto scrollbar-hide"
+    >
+      <button
+        onclick="switchTab('description')"
+        id="tabDescBtn"
+        class="tab-btn py-3 text-gray-800 font-medium border-b-2 border-accent whitespace-nowrap"
+      >
+        Mô tả sản phẩm
+      </button>
+      <button
+        onclick="switchTab('specs')"
+        id="tabSpecsBtn"
+        class="tab-btn py-3 text-gray-500 font-medium hover:text-gray-700 transition whitespace-nowrap"
+      >
+        Thông số kỹ thuật
+      </button>
+      <button
+        onclick="switchTab('reviews')"
+        id="tabReviewsBtn"
+        class="tab-btn py-3 text-gray-500 font-medium hover:text-gray-700 transition whitespace-nowrap"
+      >
+        Đánh giá ({{ reviews|length if reviews else 0 }})
+      </button>
+      <button
+        onclick="switchTab('policy')"
+        id="tabPolicyBtn"
+        class="tab-btn py-3 text-gray-500 font-medium hover:text-gray-700 transition whitespace-nowrap"
+      >
+        Chính sách & Vận chuyển
+      </button>
+    </div>
+
+    <!-- Description Tab -->
+    <div id="tabDescription" class="tab-content py-6">
+      <div class="prose max-w-none text-gray-600">
+        {{ listing.web_description or listing.product.description or 'Chưa có mô
+        tả chi tiết cho sản phẩm này.'|safe }}
+      </div>
+    </div>
+
+    <!-- Specs Tab -->
+    <div id="tabSpecs" class="tab-content py-6 hidden">
+      <div class="bg-gray-50 rounded-xl p-6">
+        <table class="w-full">
+          <tbody class="divide-y divide-gray-200">
+            <tr class="py-3">
+              <td class="py-3 w-1/3 text-gray-500 font-medium">Mã sản phẩm</td>
+              <td class="py-3 text-gray-800">
+                {{ listing.product.code if listing.product else '—' }}
+              </td>
+            </tr>
+            <tr class="py-3">
+              <td class="py-3 w-1/3 text-gray-500 font-medium">Thương hiệu</td>
+              <td class="py-3 text-gray-800">
+                {{ listing.product.brand if listing.product and
+                listing.product.brand else '—' }}
+              </td>
+            </tr>
+            <tr class="py-3">
+              <td class="py-3 w-1/3 text-gray-500 font-medium">Đơn vị tính</td>
+              <td class="py-3 text-gray-800">
+                {{ listing.product.get_unit_name() if listing.product and
+                listing.product.get_unit_name() else (listing.product.unit if
+                listing.product else 'Cái') }}
+              </td>
+            </tr>
+            <tr class="py-3">
+              <td class="py-3 w-1/3 text-gray-500 font-medium">Xuất xứ</td>
+              <td class="py-3 text-gray-800">
+                {{ listing.product.origin if listing.product and
+                listing.product.origin else 'Việt Nam' }}
+              </td>
+            </tr>
+            <tr class="py-3">
+              <td class="py-3 w-1/3 text-gray-500 font-medium">Bảo hành</td>
+              <td class="py-3 text-gray-800">12 tháng chính hãng</td>
+            </tr>
+            <tr class="py-3">
+              <td class="py-3 w-1/3 text-gray-500 font-medium">Tồn kho</td>
+              <td class="py-3 text-gray-800">
+                {{ listing.stock_cached }} sản phẩm
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reviews Tab -->
+    <div id="tabReviews" class="tab-content py-6 hidden">
+      <div class="flex flex-col md:flex-row gap-8">
+        <!-- Rating Summary -->
+        <div class="md:w-72 bg-gray-50 rounded-xl p-6 text-center">
+          <div class="text-5xl font-bold text-primary">
+            {{ "%.1f"|format(avg_rating|default(0)) }}
+          </div>
+          <div class="flex justify-center gap-1 my-3">
+            {% for i in range(5) %}
+            <i
+              class="fas fa-star text-{% if i < (avg_rating|default(0))|round(0, 'floor')|int %}yellow-400{% else %}gray-300{% endif %}"
+            ></i>
+            {% endfor %}
+          </div>
+          <div class="text-sm text-gray-500">{{ reviews|length }} đánh giá</div>
+        </div>
+
+        <!-- Review Form -->
+        {% if is_web_customer() %}
+        <div class="flex-1">
+          <h4 class="font-semibold text-gray-800 mb-3">
+            Viết đánh giá của bạn
+          </h4>
+          <form id="reviewForm" class="space-y-4">
+            <div>
+              <div class="flex gap-1 mb-2">
+                {% for i in range(1, 6) %}
+                <i
+                  class="far fa-star text-2xl cursor-pointer hover:text-yellow-400 transition"
+                  data-rating="{{ i }}"
+                  onclick="setRating({{ i }})"
+                ></i>
+                {% endfor %}
+              </div>
+              <input type="hidden" id="rating" name="rating" value="5" />
+            </div>
+            <textarea
+              id="reviewContent"
+              rows="4"
+              class="w-full p-3 border border-gray-200 rounded-xl focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+            ></textarea>
+            <button
+              type="submit"
+              class="px-5 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primaryDark transition"
+            >
+              Gửi đánh giá
+            </button>
+          </form>
+        </div>
+        {% else %}
+        <div class="flex-1 bg-blue-50 rounded-xl p-6 text-center">
+          <i class="fas fa-lock text-3xl text-blue-400 mb-2"></i>
+          <p class="text-gray-600">
+            Vui lòng
+            <a
+              href="{{ url_for('shop.login') }}"
+              class="text-accent font-medium"
+              >đăng nhập</a
+            >
+            để viết đánh giá
+          </p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Existing Reviews -->
+      <div class="mt-8 space-y-4">
+        {% for review in reviews %}
+        <div
+          class="p-5 border border-gray-100 rounded-xl hover:shadow-sm transition"
+        >
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div>
+              <span class="font-medium text-gray-800"
+                >{{ review.customer_name or 'Khách hàng' }}</span
+              >
+              <div class="flex gap-0.5 mt-1">
+                {% for i in range(5) %}
+                <i
+                  class="fas fa-star text-xs {% if i < review.rating %}text-yellow-400{% else %}text-gray-300{% endif %}"
+                ></i>
+                {% endfor %}
+              </div>
+            </div>
+            <span class="text-xs text-gray-400"
+              >{{ review.created_at.strftime('%d/%m/%Y') if review.created_at
+              else 'Vừa xong' }}</span
+            >
+          </div>
+          <p class="text-gray-600 text-sm">{{ review.content }}</p>
+        </div>
+        {% endfor %} {% if not reviews %}
+        <div class="text-center py-8 text-gray-400">
+          <i class="fas fa-comment-dots text-4xl mb-2"></i>
+          <p>
+            Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Policy Tab -->
+    <div id="tabPolicy" class="tab-content py-6 hidden">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-gray-50 rounded-xl p-5">
+          <i class="fas fa-truck-fast text-2xl text-accent mb-3"></i>
+          <h4 class="font-semibold text-gray-800 mb-2">🚚 Giao hàng</h4>
+          <p class="text-gray-600 text-sm leading-relaxed">
+            Miễn phí giao hàng cho đơn từ 500.000đ. Giao hàng trong 24h tại nội
+            thành TP.HCM và Hà Nội. Các tỉnh khác nhận hàng sau 2-3 ngày.
+          </p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-5">
+          <i class="fas fa-undo-alt text-2xl text-accent mb-3"></i>
+          <h4 class="font-semibold text-gray-800 mb-2">📋 Đổi trả</h4>
+          <p class="text-gray-600 text-sm leading-relaxed">
+            Đổi trả miễn phí trong vòng 7 ngày nếu sản phẩm có lỗi từ nhà sản
+            xuất. Sản phẩm phải còn nguyên tem mác, chưa qua sử dụng.
+          </p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-5">
+          <i class="fas fa-file-invoice-dollar text-2xl text-accent mb-3"></i>
+          <h4 class="font-semibold text-gray-800 mb-2">📄 Hóa đơn VAT</h4>
+          <p class="text-gray-600 text-sm leading-relaxed">
+            Xuất hóa đơn GTGT theo yêu cầu. Vui lòng cung cấp thông tin công ty
+            (MST, địa chỉ) khi đặt hàng. Hóa đơn được gửi cùng hàng hoặc email
+            trong 24h.
+          </p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-5">
+          <i class="fas fa-handshake text-2xl text-accent mb-3"></i>
+          <h4 class="font-semibold text-gray-800 mb-2">💼 Báo giá B2B</h4>
+          <p class="text-gray-600 text-sm leading-relaxed">
+            Liên hệ hotline <strong class="text-primary">1800 1234</strong> hoặc
+            email <strong class="text-primary">kinhdoanh@vpp.vn</strong> để được
+            báo giá theo số lượng và ký hợp đồng khung.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Products -->
+  {% if related_products %}
+  <div class="mt-12 pt-4 border-t border-gray-100">
+    <h2 class="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+      <i class="fas fa-tags text-accent"></i> Sản phẩm liên quan
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {% for product in related_products %}
+      <div
+        class="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition group"
+      >
+        <a href="{{ url_for('shop.product_detail', slug=product.slug) }}">
+          <div
+            class="aspect-square bg-gray-50 flex items-center justify-center p-4"
+          >
+            <img
+              src="{{ product.image_url or url_for('shop.product_placeholder', code=product.product_code, name=product.name) }}"
+              class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
+            />
+          </div>
+        </a>
+        <div class="p-3">
+          <a
+            href="{{ url_for('shop.product_detail', slug=product.slug) }}"
+            class="block"
+          >
+            <h3
+              class="font-medium text-gray-800 text-sm line-clamp-2 hover:text-accent"
+            >
+              {{ product.name }}
+            </h3>
+          </a>
+          <div class="mt-2">
+            <span class="font-bold text-primary text-sm"
+              >{{ product.price|currency }}</span
+            >
+          </div>
+          <button
+            onclick="ajaxAddToCart({{ product.id }}, 1, this)"
+            class="w-full mt-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primaryDark transition"
+          >
+            <i class="fas fa-cart-plus mr-1"></i>Thêm giỏ
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Zoom Modal -->
+<div
+  id="zoomModal"
+  class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center"
+  onclick="closeZoomModal()"
+>
+  <img id="zoomImage" src="" class="max-w-[90vw] max-h-[90vh] object-contain" />
+  <button
+    class="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition"
+    onclick="closeZoomModal()"
+  >
+    <i class="fas fa-times text-gray-700"></i>
+  </button>
+</div>
+
+<script>
+  let currentRating = 5;
+
+  function setRating(rating) {
+      currentRating = rating;
+      document.getElementById('rating').value = rating;
+      document.querySelectorAll('[data-rating]').forEach((star, index) => {
+          if (index < rating) {
+              star.classList.remove('far');
+              star.classList.add('fas', 'text-yellow-400');
+          } else {
+              star.classList.remove('fas', 'text-yellow-400');
+              star.classList.add('far');
+          }
+      });
+  }
+
+  function switchTab(tab) {
+      const tabs = ['description', 'specs', 'reviews', 'policy'];
+      tabs.forEach(t => {
+          const content = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+          const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
+          if (content) content.classList.add('hidden');
+          if (btn) {
+              btn.classList.remove('border-accent', 'text-gray-800');
+              btn.classList.add('text-gray-500');
+          }
+      });
+      const activeContent = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+      const activeBtn = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}Btn`);
+      if (activeContent) activeContent.classList.remove('hidden');
+      if (activeBtn) {
+          activeBtn.classList.add('border-accent', 'text-gray-800');
+          activeBtn.classList.remove('text-gray-500');
+      }
+  }
+
+  function changeQty(delta) {
+      const input = document.getElementById('qty');
+      let val = parseInt(input.value) || 1;
+      const max = parseInt(input.max) || 999;
+      val = Math.max(1, Math.min(val + delta, max));
+      input.value = val;
+  }
+
+  function addToCart() {
+      const qty = document.getElementById('qty').value;
+      const btn = event.currentTarget;
+      ajaxAddToCart({{ listing.id }}, qty, btn);
+  }
+
+    function switchImage(element, src) {
+        document.getElementById('mainImage').src = src;
+        document.querySelectorAll('.thumb-item').forEach(el => {
+            el.classList.remove('border-accent');
+            el.classList.add('border-gray-200');
+        });
+        element.classList.remove('border-gray-200');
+        element.classList.add('border-accent');
+    }
+
+  function openZoomModal() {
+      const modal = document.getElementById('zoomModal');
+      const img = document.getElementById('zoomImage');
+      img.src = document.getElementById('mainImage').src;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+  }
+
+  function closeZoomModal() {
+      const modal = document.getElementById('zoomModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+  }
+
+  async function toggleWishlist() {
+      const icon = document.getElementById('wishlistIcon');
+      const isActive = icon.classList.contains('fas');
+
+      try {
+          const response = await fetch(`/shop/wishlist/toggle/{{ listing.id }}`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': getCsrf()
+              }
+          });
+          const data = await response.json();
+          if (response.ok) {
+              if (data.action === 'added') {
+                  icon.classList.remove('far');
+                  icon.classList.add('fas', 'text-red-500');
+                  showToast('Đã thêm vào danh sách yêu thích', 'success');
+              } else {
+                  icon.classList.remove('fas', 'text-red-500');
+                  icon.classList.add('far');
+                  showToast('Đã xóa khỏi danh sách yêu thích', 'info');
+              }
+          } else if (data.requires_login) {
+              window.location.href = "{{ url_for('shop.login') }}";
+          } else {
+              showToast(data.message || 'Có lỗi xảy ra', 'error');
+          }
+      } catch (error) {
+          showToast('Không thể kết nối đến server', 'error');
+      }
+  }
+
+  // Review form submission
+  document.getElementById('reviewForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rating = document.getElementById('rating').value;
+      const content = document.getElementById('reviewContent').value;
+
+      if (!content.trim()) {
+          showToast('Vui lòng nhập nội dung đánh giá', 'warning');
+          return;
+      }
+
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang gửi...';
+      submitBtn.disabled = true;
+
+      try {
+          const response = await fetch(`/shop/product/{{ listing.product_id }}/review`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': getCsrf()
+              },
+              body: JSON.stringify({ rating: parseInt(rating), content: content.trim() })
+          });
+          const data = await response.json();
+          if (response.ok) {
+              showToast('Cảm ơn bạn đã đánh giá!', 'success');
+              setTimeout(() => location.reload(), 1500);
+          } else {
+              showToast(data.message || 'Có lỗi xảy ra', 'error');
+              submitBtn.innerHTML = originalText;
+              submitBtn.disabled = false;
+          }
+      } catch (error) {
+          showToast('Không thể kết nối đến server', 'error');
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+      }
+  });
+
+  // Initialize rating stars
+  setRating(5);
+
+  // Highlight current tab from URL hash
+  const hash = window.location.hash;
+  if (hash === '#reviews') switchTab('reviews');
+  else if (hash === '#specs') switchTab('specs');
+  else if (hash === '#policy') switchTab('policy');
+</script>
+{% endblock %}

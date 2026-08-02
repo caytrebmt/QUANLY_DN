@@ -1,0 +1,263 @@
+<!-- templates/shop/cart.html -->
+{% extends "shop/base.html" %} {% block title %}Giỏ hàng{% endblock %} {% block
+content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+    <i class="fas fa-shopping-cart text-accent"></i> Giỏ hàng
+  </h1>
+
+  {% if items %}
+  <div class="flex flex-col lg:flex-row gap-8">
+    <!-- Cart Items -->
+    <div class="flex-1">
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div
+          class="hidden md:grid grid-cols-[2fr,1fr,1fr,0.5fr] gap-4 p-4 bg-gray-50 border-b border-gray-100 text-sm font-semibold text-gray-600"
+        >
+          <span>Sản phẩm</span><span class="text-center">Đơn giá</span
+          ><span class="text-center">Số lượng</span
+          ><span class="text-right">Thành tiền</span>
+        </div>
+
+        {% for item in items %}
+        <div
+          class="cart-item p-4 border-b border-gray-100 last:border-0"
+          data-id="{{ item.id }}"
+        >
+          <div class="flex flex-col md:flex-row md:items-center gap-4">
+            <div class="flex gap-3 flex-1">
+              <img
+                src="{{ item.listing.display_image or url_for('shop.product_placeholder', code=item.product.code if item.product else 'X', name=item.listing.display_name() if item.listing else '') }}"
+                class="w-20 h-20 object-contain bg-gray-50 rounded-lg"
+                alt=""
+              />
+              <div>
+                <h3 class="font-medium text-gray-800">
+                  {{ item.listing.display_name() if item.listing else
+                  item.product.name }}
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">
+                  Mã: {{ item.product.code if item.product else '' }}
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-center justify-between md:justify-end gap-4 flex-1"
+            >
+              <div class="w-28 text-left md:text-center">
+                <span class="md:hidden text-xs text-gray-500 block mb-1"
+                  >Đơn giá</span
+                >
+                <span class="font-medium text-primary"
+                  >{{ item.unit_price|currency }}</span
+                >
+              </div>
+              <div class="w-32">
+                <span class="md:hidden text-xs text-gray-500 block mb-1"
+                  >Số lượng</span
+                >
+                <div
+                  class="flex items-center border border-gray-200 rounded-lg w-fit"
+                >
+                  <button
+                    onclick="updateQty({{ item.id }}, -1)"
+                    class="w-8 h-8 flex items-center justify-center hover:bg-gray-50"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    id="qty-{{ item.id }}"
+                    value="{{ item.quantity }}"
+                    min="1"
+                    step="1"
+                    class="w-12 h-8 text-center border-x border-gray-200 outline-none text-sm"
+                    onchange="updateQtyInput({{ item.id }})"
+                  />
+                  <button
+                    onclick="updateQty({{ item.id }}, 1)"
+                    class="w-8 h-8 flex items-center justify-center hover:bg-gray-50"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div class="w-28 text-right">
+                <span class="md:hidden text-xs text-gray-500 block mb-1"
+                  >Thành tiền</span
+                >
+                <span
+                  class="font-semibold text-primary"
+                  id="total-{{ item.id }}"
+                  >{{ (item.quantity * item.unit_price)|currency }}</span
+                >
+              </div>
+              <button
+                onclick="removeItem({{ item.id }})"
+                class="text-gray-400 hover:text-red-500 transition"
+              >
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div
+          class="p-4 bg-gray-50 flex flex-col sm:flex-row justify-between gap-3"
+        >
+          <a
+            href="{{ url_for('shop.catalog') }}"
+            class="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition text-center"
+            ><i class="fas fa-arrow-left mr-2"></i>Tiếp tục mua sắm</a
+          >
+          <button
+            onclick="updateCart()"
+            class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primaryDark transition"
+          >
+            <i class="fas fa-sync-alt mr-2"></i>Cập nhật giỏ hàng
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="lg:w-96">
+      <div class="bg-white rounded-xl border border-gray-100 p-6 sticky top-24">
+        <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <i class="fas fa-receipt text-accent"></i> Tóm tắt đơn hàng
+        </h3>
+        <div class="space-y-3 pb-4 border-b border-gray-100">
+          <div class="flex justify-between text-gray-600">
+            <span>Tạm tính</span
+            ><span id="subtotal-display">{{ subtotal|currency }}</span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>Phí vận chuyển</span
+            ><span class="text-green-600">Miễn phí</span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>Thuế VAT</span><span>-</span>
+          </div>
+        </div>
+        <div class="flex justify-between mt-4 pb-4 border-b border-gray-100">
+          <span class="font-bold text-gray-800">Tổng cộng</span
+          ><span class="font-bold text-xl text-primary" id="total-display"
+            >{{ subtotal|currency }}</span
+          >
+        </div>
+        <a
+          href="{{ url_for('shop.checkout') }}"
+          class="block w-full mt-6 py-3 bg-accent text-white rounded-lg font-semibold text-center hover:bg-accentDark transition"
+          ><i class="fas fa-lock mr-2"></i>Tiến hành thanh toán</a
+        >
+        <div class="flex justify-center gap-4 mt-4 text-xs text-gray-400">
+          <span><i class="fas fa-shield-alt mr-1"></i>Bảo mật SSL</span
+          ><span><i class="fas fa-file-invoice mr-1"></i>Xuất VAT</span
+          ><span><i class="fas fa-undo mr-1"></i>Đổi trả 7 ngày</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% for item in items %}
+  <form
+    id="remove-form-{{ item.id }}"
+    method="POST"
+    action="{{ url_for('shop.remove_cart_item', item_id=item.id) }}"
+    style="display: none"
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  </form>
+  {% endfor %}
+  <form
+    id="update-cart-form"
+    method="POST"
+    action="{{ url_for('shop.update_cart') }}"
+    style="display: none"
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  </form>
+
+  {% else %}
+  <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
+    <i class="fas fa-shopping-cart text-5xl text-gray-300 mb-4"></i>
+    <h3 class="text-lg font-semibold text-gray-800 mb-2">Giỏ hàng trống</h3>
+    <p class="text-gray-500 mb-4">
+      Hãy thêm sản phẩm vào giỏ để tiến hành đặt hàng
+    </p>
+    <a
+      href="{{ url_for('shop.catalog') }}"
+      class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg"
+      ><i class="fas fa-store"></i>Mua sắm ngay</a
+    >
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function fmtVND(n) {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(Math.round(n));
+  }
+  function recalcTotal() {
+    let total = 0;
+    document.querySelectorAll('[id^="qty-"]').forEach((input) => {
+      const id = input.id.split("-")[1];
+      const qty = parseInt(input.value) || 0;
+      const priceElem = document.querySelector(`#total-${id}`);
+      if (priceElem) {
+        const price = parseFloat(priceElem.getAttribute("data-price") || 0);
+        const itemTotal = qty * price;
+        priceElem.textContent = fmtVND(itemTotal);
+        total += itemTotal;
+      }
+    });
+    document.getElementById("subtotal-display").textContent = fmtVND(total);
+    document.getElementById("total-display").textContent = fmtVND(total);
+  }
+  function updateQty(id, delta) {
+    const input = document.getElementById(`qty-${id}`);
+    let val = parseInt(input.value) || 1;
+    val = Math.max(1, val + delta);
+    input.value = val;
+    recalcTotal();
+  }
+  function updateQtyInput(id) {
+    const input = document.getElementById(`qty-${id}`);
+    let val = parseInt(input.value);
+    if (isNaN(val) || val < 1) val = 1;
+    input.value = val;
+    recalcTotal();
+  }
+  function updateCart() {
+    const form = document.getElementById("update-cart-form");
+    const items = {};
+    document.querySelectorAll('[id^="qty-"]').forEach((input) => {
+      const id = input.id.split("-")[1];
+      items[`qty_${id}`] = input.value;
+    });
+    Object.entries(items).forEach(([name, value]) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    });
+    form.submit();
+  }
+  function removeItem(id) {
+    if (confirm("Xóa sản phẩm khỏi giỏ hàng?")) {
+      document.getElementById(`remove-form-${id}`).submit();
+    }
+  }
+  // Store prices for recalculation
+  document.querySelectorAll('[id^="total-"]').forEach((el) => {
+    const text = el.textContent;
+    const price = parseFloat(text.replace(/[^0-9]/g, "")) || 0;
+    el.setAttribute("data-price", price);
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,6 @@
+{
+  "name": "WebShop",
+  "description": "A React SPA webshop integrated with ERPACC backend featuring products catalog, cart, checkout, orders history, account profile, and promotions validation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

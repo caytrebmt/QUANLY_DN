@@ -1,0 +1,185 @@
+{% extends "print/browser_base.html" %}
+{% block body %}
+<!-- HEADER -->
+<table class="no-border" style="width: 100%; font-size: 13px">
+  <tr>
+    <td style="width: 60%" font-size: 13px>
+      <strong>{{ company.name }}</strong><br />
+      {{ company.address }}<br />
+      MST: {{ company.tax_code }}
+    </td>
+    <td style="width: 40%; text-align: right">
+      Số: {{ stock_out.code }}
+      <div>HĐS:{{ stock_out.note if stock_out else '' }}</div>
+    </td>
+  </tr>
+</table>
+
+<div class="text-center mt-3 mb-3">
+  <div class="title">PHIẾU GIAO HÀNG</div>
+  <div class="subtitle">
+    Ngày: {{ stock_out.date.strftime('%d tháng %m năm %Y') if stock_out.date else '' }}
+  </div>
+</div>
+
+<table class="no-border mt-3 mb-3" style="width: 100%; font-size: 13px">
+  <tr>
+    <td>
+      Khách hàng:
+      <strong>{{ stock_out.customer.name if stock_out.customer else '' }}</strong>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Địa chỉ: {{ stock_out.customer.address if stock_out.customer else '' }}
+    </td>
+  </tr>
+</table>
+
+<!-- TABLE -->
+
+{% if stock_out.vat_mode == 'grouped' %}
+<table class="dn-table">
+  <thead>
+    <tr>
+      <th style="width: 5%; text-align: center">Stt</th>
+      <th style="width: 35%; text-align: center">Tên & Loại Hàng Hóa</th>
+      <th style="width: 10%; text-align: center">ĐVT</th>
+      <th style="width: 10%; text-align: center">SL</th>
+      <th style="width: 12%; text-align: center">ĐG</th>
+      <th style="width: 18%; text-align: center">Thành tiền</th>
+      <th style="width: 10%; text-align: center">Thùng</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td class="text-center">{{ loop.index }}</td>
+      <td>{{ item.product.name if item.product else '' }}</td>
+      <td class="text-center">
+        {{ item.unit.name if item.unit else (item.product.get_unit_name() if item.product else '') }}
+      </td>
+      <td class="text-end">{{ item.quantity|qty_vn }}</td>
+      <td class="text-end">{{ item.unit_price|currency }}</td>
+      <td class="text-end">{{ item.amount|currency }}</td>
+      <td class="text-center">{{ item.box_note or '' }}</td>
+    </tr>
+    {% endfor %} {% for i in range(5) %}
+    <tr>
+      <td class="text-center">&nbsp;</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="5" class="text-end">Cộng</th>
+      <th></th>
+      <th class="text-center">
+        {{ stock_out.total_boxes|number(0) if stock_out.total_boxes else '' }}
+      </th>
+    </tr>
+
+    <tr>
+      <th colspan="5" class="text-end">Thành tiền</th>
+      <th class="text-end">{{ stock_out.subtotal|currency }}</th>
+      <th></th>
+    </tr>
+
+    <tr>
+      <th colspan="5" class="text-end">
+        Thuế GTGT : {{ stock_out.vat_rate_grouped|number(0) }}%
+      </th>
+      <th class="text-end">{{ stock_out.vat_amount|currency }}</th>
+      <th></th>
+    </tr>
+
+    <tr>
+      <th colspan="5" class="text-end" style="font-size: 14px">Tổng cộng</th>
+      <th class="text-end fw-bold">{{ stock_out.total_amount|currency }}</th>
+      <th></th>
+    </tr>
+  </tfoot>
+</table>
+
+{% else %}
+
+<table class="dn-table">
+  <thead>
+    <tr>
+      <th style="width: 4%">STT</th>
+      <th style="width: 10%">Mã hàng</th>
+      <th style="width: 26%">Tên hàng hóa</th>
+      <th style="width: 8%">ĐVT</th>
+      <th style="width: 8%">Số lượng</th>
+      <th style="width: 10%">Đơn giá</th>
+      <th style="width: 12%">Thành tiền</th>
+      <th style="width: 6%">VAT%</th>
+      <th style="width: 8%">Tiền VAT</th>
+      <th style="width: 12%">Tổng cộng</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td class="text-center">{{ loop.index }}</td>
+      <td>{{ item.product.code if item.product else '' }}</td>
+      <td>{{ item.product.name if item.product else '' }}</td>
+      <td class="text-center">{{ item.unit.name if item.unit else '' }}</td>
+      <td class="text-end">{{ item.quantity|qty_vn }}</td>
+      <td class="text-end">{{ item.unit_price|currency }}</td>
+      <td class="text-end">{{ item.amount|currency }}</td>
+      <td class="text-end">{{ item.vat_rate|number(0) }}%</td>
+      <td class="text-end">{{ item.vat_amount|currency }}</td>
+      <td class="text-end fw-bold">{{ item.total_amount|currency }}</td>
+    </tr>
+    {% endfor %} {% for i in range(5) %}
+    <tr>
+      <td class="text-center">&nbsp;</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="7" class="text-end">Cộng:</th>
+      <th></th>
+      <th class="text-end">{{ stock_out.vat_amount|currency }}</th>
+      <th class="text-end fw-bold">{{ stock_out.total_amount|currency }}</th>
+    </tr>
+  </tfoot>
+</table>
+{% endif %}
+
+<div style="margin-top: 12px" class="fw-bold">
+  Số tiền bằng chữ: {{ stock_out.total_amount|so_thanh_chu }}
+</div>
+
+<!-- SIGN -->
+<table
+  class="no-border"
+  style="width: 100%; margin-top: 30px; text-align: center"
+>
+  <tr>
+    <td><strong>Đại Diện Bên Giao Hàng</strong></td>
+    <td><strong>Bên Nhận Hàng</strong></td>
+  </tr>
+  <tr>
+    <td>(Ký, ghi rõ họ tên)</td>
+    <td>(Ký, ghi rõ họ tên)</td>
+  </tr>
+</table>
+{% endblock %}

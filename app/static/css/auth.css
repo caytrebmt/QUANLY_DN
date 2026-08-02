@@ -1,0 +1,178 @@
+body {
+        background: linear-gradient(135deg,
+        #0f2440 0%,
+        #1a3a5c 50%,
+        #2563a8 100%
+      );
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Inter", sans-serif;
+}
+
+      /* Card chính */
+.login-card {
+        width: 420px;
+        border-radius: 18px;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease;
+      }
+
+      /* Header */
+.login-header {
+        background: linear-gradient(135deg, #1a3a5c, #2563a8);
+        padding: 35px 30px;
+        text-align: center;
+        color: white;
+        position: relative;
+      }
+
+.login-header i {
+        opacity: 0.9;
+      }
+
+      .login-header h4 {
+        font-weight: 700;
+        margin: 12px 0 5px;
+        letter-spacing: 0.5px;
+      }
+
+      .login-header p {
+        opacity: 0.8;
+        font-size: 13px;
+      }
+
+      /* Container chính */
+      .floating-group {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+      }
+
+      /* Đẩy input xuống dưới một chút để label có không gian hiển thị */
+.floating-group .form-control {
+        z-index: 1; /* Thấp hơn label */
+      }
+
+      /* Style cho Label */
+      /* Container của nhóm input */
+.floating-group {
+        position: relative;
+        display: flex;
+      }
+
+      /* Label phải có z-index cao hơn và nền trắng che viền input */
+      .floating-group label {
+        position: absolute;
+        top: 50%;
+        left: 55px; /* Điều chỉnh để tránh đè lên icon user/lock */
+        transform: translateY(-50%);
+        background-color: #ffffff; /* Bắt buộc có background để che viền input bên dưới */
+        padding: 0 8px; /* Tạo khoảng trống 2 bên chữ để không dính viền */
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+        transition: all 0.2s ease;
+        z-index: 10; /* Cao hơn mức z-index 3 mặc định của Bootstrap khi focus */
+      }
+
+      /* Hiệu ứng bay lên */
+      .floating-group input:focus + label,
+      .floating-group input:not(:placeholder-shown) + label {
+        top: 0; /* Đẩy hẳn lên trên viền */
+        font-size: 11px;
+        color: #2563a8;
+        font-weight: 700;
+        left: 50px;
+      }
+
+      /* Đảm bảo ô input không đè lên label khi được focus */
+      .form-control:focus {
+        z-index: 1 !important; /* Hạ thấp z-index của input xuống */
+      }
+
+      /* Tùy chỉnh nhỏ để label không bị dính sát mép trên */
+      .mb-4 {
+        margin-bottom: 1.5rem !important;
+      }
+
+      /* Body */
+      .login-body {
+        padding: 32px;
+        background: #ffffff;
+      }
+
+      /* Input */
+      .form-control {
+        border-radius: 10px;
+        padding: 10px 12px;
+        transition: all 0.25s ease;
+      }
+
+      .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(37, 99, 168, 0.15);
+      }
+
+      .input-group-text {
+        background: #f1f5f9;
+        border-radius: 10px 0 0 10px;
+      }
+
+      /* Button */
+      .btn-login {
+        background: linear-gradient(135deg, #1a3a5c, #2563a8);
+        border: none;
+        padding: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+      }
+
+    .btn-login:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(37, 99, 168, 0.35);
+        background: linear-gradient(135deg, #0f2440, #173c77);
+    }
+
+      /* Checkbox */
+    .form-check-input:checked {
+        background-color: #2563a8;
+        border-color: #114683;
+    }
+
+      /* Alert */
+      .alert {
+        border-radius: 10px;
+        font-size: 14px;
+      }
+
+      /* Footer text */
+      .login-body p {
+        font-size: 12px;
+        opacity: 0.7;
+      }
+
+      /* Animation */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(25px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 480px) {
+        .login-card {
+          width: 95%;
+        }
+      }
+    

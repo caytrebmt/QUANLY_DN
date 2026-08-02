@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% block title %}Quản lý Menu{% endblock %}
+{% block page_title %}<i class="fas fa-bars me-2"></i>Quản lý menu hệ thống{% endblock %}
+
+{% block content %}
+
+<!-- Tab navigation -->
+<ul class="nav nav-tabs mb-3" id="menuTabs">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-list">
+      <i class="fas fa-list me-1"></i>Danh sách menu
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preview">
+      <i class="fas fa-eye me-1"></i>Xem trước (mặc định theo vai trò)
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- TAB 1: DANH SÁCH + CRUD                       -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="tab-pane fade show active" id="tab-list">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span>Tất cả menu — <small class="text-muted">Thay đổi có hiệu lực ngay</small></span>
+          <div class="input-group input-group-sm" style="width:260px">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="menuSearch" placeholder="Tìm code/tên/module..." oninput="filterMenus()">
+          </div>
+          <div class="form-check form-switch small">
+            <input class="form-check-input" type="checkbox" id="hideInactive" onchange="filterMenus()">
+            <label class="form-check-label" for="hideInactive">Chỉ menu đang ẩn</label>
+          </div>
+        </div>
+        <a href="{{ url_for('settings.menus.create_menu') }}" class="btn btn-sm btn-primary">
+          <i class="fas fa-plus me-1"></i>Thêm menu mới
+        </a>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+            <thead>
+              <tr>
+                <th width="40"></th>
+                <th>Mã menu</th>
+                <th>Tên menu</th>
+                <th>Menu cha</th>
+                <th>Icon / URL</th>
+                <th>Thứ tự</th>
+                <th>
+                  <i class="fas fa-cube me-1 text-primary"></i>
+                  Module (nguồn quyết định hiển thị)
+                </th>
+                <th class="text-center">Hiện</th>
+                <th class="text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="menu-table-body">
+              {% for m in menus %}
+              <tr id="menu-row-{{ m.id }}"
+                  class="{{ 'fw-semibold bg-light' if not m.parent_id else '' }}"
+                  style="{{ 'opacity:0.45' if not m.is_active else '' }}"
+                  data-code="{{ m.code|lower }}"
+                  data-name="{{ m.name|lower }}"
+                  data-module="{{ (m.module or '')|lower }}"
+                  data-active="{{ 1 if m.is_active else 0 }}">
+
+                <!-- Loại menu -->
+                <td class="text-center">
+                  {% if not m.parent_id %}
+                    <i class="fas fa-folder text-warning" title="Menu nhóm"></i>
+                  {% else %}
+                    <i class="fas fa-angle-right text-muted ms-2" title="Menu con"></i>
+                  {% endif %}
+                </td>
+
+                <td><code>{{ m.code }}</code></td>
+
+                <td>
+                  {% if m.parent_id %}
+                    <span class="ms-3 text-muted small">└</span>
+                  {% endif %}
+                  {{ m.name }}
+                </td>
+
+                <td>
+                  {% if m.parent %}
+                    <span class="badge bg-secondary">{{ m.parent.code }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  <div class="small">
+                    <i class="{{ m.icon or 'fas fa-circle' }} me-1"></i>
+                    <span class="text-muted">{{ m.icon }}</span>
+                  </div>
+                  {% if m.url %}
+                  <div class="small text-primary">{{ m.url }}</div>
+                  {% endif %}
+                </td>
+
+                <td class="text-center">
+                  <span class="badge bg-secondary">{{ m.order_no }}</span>
+                </td>
+
+                <!-- Module - nguồn quyết định hiển thị menu -->
+                <td>
+                  {% if m.module %}
+                    <code class="text-primary">{{ m.module }}</code>
+                    <div class="small text-muted mt-1">
+                      Menu hiện khi user có quyền <b>Xem</b> module này
+                    </div>
+                  {% else %}
+                    <span class="badge bg-light text-secondary border">
+                      <i class="fas fa-crown me-1"></i>Chỉ Admin
+                    </span>
+                  {% endif %}
+                </td>
+
+                <!-- Toggle hiển thị -->
+                <td class="text-center">
+                  <div class="form-check form-switch d-flex justify-content-center mb-0">
+                    <input class="form-check-input toggle-menu" type="checkbox"
+                           data-id="{{ m.id }}"
+                           {{ 'checked' if m.is_active else '' }}>
+                  </div>
+                </td>
+
+                <!-- Actions -->
+                <td class="text-center">
+                  <a href="{{ url_for('settings.menus.edit_menu', id=m.id) }}"
+                     class="btn btn-sm btn-outline-primary py-0 px-2 me-1" title="Sửa">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  {% if m.children|length == 0 %}
+                  <form method="POST" action="{{ url_for('settings.menus.delete_menu', id=m.id) }}"
+                        class="d-inline"
+                        onsubmit="return confirm('Xóa menu [{{ m.code }}] {{ m.name }}?')">
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Xóa">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                  {% else %}
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                          disabled title="{{ m.children|length }} menu con, không thể xóa">
+                    <i class="fas fa-lock"></i>
+                  </button>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                  Chưa có menu nào.
+                  <a href="{{ url_for('settings.menus.create_menu') }}">Thêm menu đầu tiên</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-footer text-muted small d-flex gap-3">
+        <span><i class="fas fa-folder text-warning me-1"></i>{{ parents|length }} nhóm menu</span>
+        <span><i class="fas fa-angle-right me-1"></i>{{ children|length }} menu con</span>
+        <span class="ms-auto">
+          <i class="fas fa-info-circle me-1"></i>
+          Hiển thị menu được tự động xác định bởi <b>Module</b> + quyền xem của từng user (Cài đặt → Quản lý users). Click icon toggle để ẩn/hiện menu.
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- TAB 2: XEM TRƯỚC THEO VAI TRÒ                 -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="tab-pane fade" id="tab-preview">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-eye me-2"></i>
+        Xem trước menu mặc định — Chọn vai trò để xem menu mà vai trò đó <b>thấy theo quyền mặc định</b>
+        (quyền thực tế của từng user có thể khác, tùy chỉnh tại Quản lý users).
+      </div>
+      <div class="card-body">
+
+        <!-- Role selector -->
+        <div class="d-flex gap-2 mb-4 flex-wrap">
+          {% set label_map = {
+            'admin': 'Quản trị viên',
+            'accountant': 'Kế toán viên',
+            'warehouse': 'Thủ kho',
+            'user': 'Người dùng'
+          } %}
+          {% set icon_map = {
+            'admin': 'fas fa-crown',
+            'accountant': 'fas fa-calculator',
+            'warehouse': 'fas fa-warehouse',
+            'user': 'fas fa-user'
+          } %}
+          {% set color_map = {
+            'admin': 'danger',
+            'accountant': 'warning',
+            'warehouse': 'info',
+            'user': 'secondary'
+          } %}
+          {% set preview_roles = role_options if role_options else ['admin','accountant','warehouse','user'] %}
+          {% for role_val in preview_roles %}
+          {% set role_label = label_map[role_val] if role_val in label_map else role_val|capitalize %}
+          {% set role_icon  = icon_map[role_val]  if role_val in icon_map  else 'fas fa-user' %}
+          {% set role_color = color_map[role_val] if role_val in color_map else 'secondary' %}
+          <button type="button"
+                  class="btn btn-outline-{{ role_color }} role-preview-btn"
+                  data-role="{{ role_val }}"
+                  onclick="previewRole('{{ role_val }}')">
+            <i class="{{ role_icon }} me-1"></i>{{ role_label }}
+          </button>
+          {% endfor %}
+        </div>
+
+        <!-- Preview area -->
+        <div id="previewArea" class="d-none">
+          <div class="alert alert-info mb-3">
+            <i class="fas fa-user-shield me-2"></i>
+            Vai trò <strong id="previewRoleLabel"></strong> sẽ thấy các menu sau:
+          </div>
+          <div class="row g-2" id="previewContent"></div>
+        </div>
+
+        <div id="previewEmpty" class="text-center text-muted py-5">
+          <i class="fas fa-mouse-pointer fa-3x mb-3 d-block opacity-25"></i>
+          Chọn một vai trò ở trên để xem trước menu
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Data store for JS -->
+    <script id="menuData" type="application/json">
+    {{ {'menus': menus_json, 'roles': role_options} | tojson }}
+    </script>
+    
+  </div>
+
+</div><!-- end tab-content -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Toggle menu active/inactive ───────────────────────────────
+document.querySelectorAll('.toggle-menu').forEach(chk => {
+  chk.addEventListener('change', function() {
+    const id = this.dataset.id;
+    fetch(`/settings/menus/toggle/${id}`, { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok) { this.checked = !this.checked; return; }
+        const row = document.getElementById(`menu-row-${id}`);
+        if (row) row.style.opacity = d.is_active ? '1' : '0.45';
+      });
+  });
+});
+
+// ── Client-side filter ─────────────────────────────────────────
+function filterMenus() {
+  const q = (document.getElementById('menuSearch').value || '').toLowerCase();
+  const hideInactive = document.getElementById('hideInactive').checked;
+  document.querySelectorAll('#menu-table-body tr').forEach(row => {
+    const code = row.dataset.code || '';
+    const name = row.dataset.name || '';
+    const mod  = row.dataset.module || '';
+    const active = row.dataset.active === '1';
+    const match = (!q || code.includes(q) || name.includes(q) || mod.includes(q));
+    const visible = match && (!hideInactive || !active);
+    row.style.display = visible ? '' : 'none';
+  });
+}
+// ── Role preview ─────────────────────────────────────────────
+let menuData = { menus: [], roles: [] };
+try {
+  const raw = document.getElementById('menuData').textContent.trim();
+  menuData = JSON.parse(raw);
+} catch (e) {
+  console.error('Menu JSON parse error:', e);
+}
+const roleOptions = Array.isArray(menuData.roles) && menuData.roles.length
+  ? menuData.roles
+  : ['admin', 'accountant', 'warehouse', 'user'];
+
+function labelFromRole(role) {
+  const map = {
+    admin: 'Quản trị viên (admin)',
+    accountant: 'Kế toán viên (accountant)',
+    warehouse: 'Thủ kho (warehouse)',
+    user: 'Người dùng (user)',
+  };
+  return map[role] || role;
+}
+
+function canSeeMenu(menu, role) {
+  if (!menu.is_active) return false;
+  role = (role || '').toLowerCase();
+  // Hiển thị mặc định theo vai trò dựa trên quyền xem module
+  const dv = menu.default_visible || {};
+  if (role === 'admin') return true;
+  return Boolean(dv[role]);
+}
+
+function previewRole(role) {
+  // Highlight selected button
+  document.querySelectorAll('.role-preview-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.role === role);
+  });
+
+  const allMenus = menuData.menus;
+  // Get parent menus visible to this role
+  const visibleParents = allMenus.filter(m => !m.parent_id && canSeeMenu(m, role));
+
+  let html = '';
+  visibleParents.forEach(parent => {
+    const visibleChildren = allMenus.filter(
+      c => c.parent_id === parent.id && canSeeMenu(c, role)
+    ).sort((a, b) => a.order_no - b.order_no);
+
+    const childrenHtml = visibleChildren.length > 0
+      ? visibleChildren.map(c => `
+          <div class="d-flex align-items-center gap-2 px-3 py-1 text-muted small">
+            <i class="${c.icon}" style="width:16px"></i>
+            <span>${c.name}</span>
+            ${c.url ? `<code class="ms-auto small">${c.url}</code>` : ''}
+          </div>`).join('')
+      : `<div class="px-3 py-1 text-muted small fst-italic">Không có menu con</div>`;
+
+    const bgColor = visibleChildren.length > 0 ? 'border-primary' : 'border-secondary';
+    html += `
+      <div class="col-md-4 col-sm-6 mb-2">
+        <div class="card h-100 border ${bgColor}">
+          <div class="card-header py-2 d-flex align-items-center gap-2" style="font-size:13px">
+            <i class="${parent.icon}"></i>
+            <strong>${parent.name}</strong>
+            <span class="badge bg-secondary ms-auto">${visibleChildren.length}</span>
+          </div>
+          <div class="card-body p-0">${childrenHtml}</div>
+        </div>
+      </div>`;
+  });
+
+  if (!html) {
+    html = `<div class="col-12 text-center text-muted py-3">
+      <i class="fas fa-ban fa-2x mb-2 d-block text-danger opacity-50"></i>
+      Vai trò này không thấy menu nào
+    </div>`;
+  }
+
+  document.getElementById('previewRoleLabel').textContent = labelFromRole(role);
+  document.getElementById('previewContent').innerHTML = html;
+  document.getElementById('previewArea').classList.remove('d-none');
+  document.getElementById('previewEmpty').classList.add('d-none');
+}
+
+// Nếu chỉ có một vai trò thì tự hiển thị luôn
+if (roleOptions.length === 1) {
+  previewRole(roleOptions[0]);
+}
+</script>
+{% endblock %}

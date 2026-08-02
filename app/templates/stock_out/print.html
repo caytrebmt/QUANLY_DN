@@ -1,0 +1,150 @@
+<!-- templates/stock_out/print.html -->
+<!doctype html>
+<html lang="{{ session.get('lang', 'vi') }}">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+      }
+      .company-name {
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th {
+        background: #1a3a5c;
+        color: white;
+        padding: 8px;
+      }
+      td {
+        padding: 6px 8px;
+        border: 1px solid #ddd;
+      }
+      .total-row {
+        font-weight: bold;
+        background: #e8f0fe;
+      }
+      .so-chu {
+        font-style: italic;
+        margin: 10px 0;
+      }
+      .signatures {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 40px;
+        text-align: center;
+      }
+      @media print {
+        body {
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="company-name">{{ company.name }}</div>
+    <div style="text-align: center">{{ company.address }}</div>
+    <div style="text-align: center">
+      MST: {{ company.tax_code }} | Tel: {{ company.phone }}
+    </div>
+    <hr />
+    <h2 style="text-align: center">PHIẾU XUẤT KHO</h2>
+    <p style="text-align: center">
+      Số phiếu: <b>{{ so.code }}</b> | Ngày:
+      <b>{{ so.date.strftime('%d/%m/%Y') }}</b> | Kho:
+      <b>{{ so.warehouse.name }}</b>
+    </p>
+
+    <p>Khách hàng: <b>{{ so.customer.name }}</b></p>
+    <p>Địa chỉ: {{ so.customer.address }}</p>
+    <p>MST: {{ so.customer.tax_code }}</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Mã hàng</th>
+          <th>Tên hàng</th>
+          <th>ĐVT</th>
+          <th>SL</th>
+          <th>Đơn giá</th>
+          <th>Thành tiền</th>
+          {% if so.vat_mode != 'grouped' %}
+          <th>VAT%</th>
+          <th>Tiền VAT</th>
+          <th>Tổng</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in so.items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ item.product.code }}</td>
+          <td>{{ item.product.name }}</td>
+          <td>{{ item.product.unit }}</td>
+          <td>{{ item.quantity|qty_vn }}</td>
+          <td>{{ item.unit_price | format_currency }}</td>
+          <td>{{ item.amount | format_currency }}</td>
+          {% if so.vat_mode != 'grouped' %}
+          <td>{{ item.vat_rate }}%</td>
+          <td>{{ item.vat_amount | format_currency }}</td>
+          <td>{{ item.total_amount | format_currency }}</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+          <td
+            colspan="{{ '7' if so.vat_mode == 'grouped' else '7' }}"
+            style="text-align: right"
+          >
+            Tổng cộng:
+          </td>
+          <td>{{ so.subtotal | format_currency }}</td>
+          {% if so.vat_mode != 'grouped' %}
+          <td></td>
+          <td>{{ so.vat_amount | format_currency }}</td>
+          <td>{{ so.total_amount | format_currency }}</td>
+          {% endif %}
+        </tr>
+        {% if so.vat_mode == 'grouped' %}
+        <tr class="total-row">
+          <td colspan="8" style="text-align: right">
+            Thuế GTGT ({{ so.vat_rate_grouped }}%):
+          </td>
+          <td>{{ so.vat_amount | format_currency }}</td>
+        </tr>
+        <tr class="total-row">
+          <td
+            colspan="8"
+            style="text-align: right; font-weight: bold; font-size: 16px"
+          >
+            Tổng cộng:
+          </td>
+          <td style="font-weight: bold; font-size: 16px">
+            {{ so.total_amount | format_currency }}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    <p class="so-chu">
+      Số tiền bằng chữ: <b>{{ so.total_amount | so_thanh_chu }}</b>
+    </p>
+
+    <div class="signatures">
+      <div><b>Người mua hàng</b><br /><br /><br /><br />(Ký, họ tên)</div>
+      <div><b>Người giao hàng</b><br /><br /><br /><br />(Ký, họ tên)</div>
+      <div><b>Thủ kho</b><br /><br /><br /><br />(Ký, họ tên)</div>
+      <div><b>Kế toán</b><br /><br /><br /><br />(Ký, họ tên)</div>
+    </div>
+  </body>
+</html>

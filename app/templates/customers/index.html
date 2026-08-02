@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Khách hàng{% endblock %}
+{% block page_title %}<i class="fas fa-users me-2"></i>Quản lý khách hàng{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Danh sách khách hàng</span>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('customers.download_template') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-download me-1"></i>Mẫu import
+      </a>
+      <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importModal">
+        <i class="fas fa-file-excel me-1"></i>Import Excel
+      </button>
+      <a href="{{ url_for('customers.export_excel') }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>Xuất Excel
+      </a>
+      <a href="{{ url_for('customers.create') }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-plus me-1"></i>Thêm khách hàng
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3" >
+      <div class="col-md-4">
+        <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
+               placeholder="Tìm theo mã, tên, SĐT, MST...">
+      </div>
+      <div class="col-md-3">
+        <select name="type" class="form-select form-select-sm" data-auto-submit>
+          <option value="">-- Tất cả loại KH --</option>
+          <option value="retail" {{ 'selected' if ctype=='retail' }}>Bán lẻ</option>
+          <option value="wholesale" {{ 'selected' if ctype=='wholesale' }}>Bán buôn</option>
+          <option value="agent" {{ 'selected' if ctype=='agent' }}>Đại lý</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Tìm</button>
+        <a href="{{ url_for('customers.index') }}" class="btn btn-sm btn-outline-secondary ms-1">Reset</a>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <!--<th>Mã KH</th>-->
+            <th>Tên khách hàng</th><th>Loại KH</th>
+            <th>Điện thoại</th><th>Email</th><th>Mã số thuế</th>
+            <th class="text-end">Hạn mức CN</th><th class="text-end">Công nợ</th>
+            <th class="text-center">TT</th><th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in customers.items %}
+          {% set debt = c.get_total_debt() %}
+          <tr>
+            <!--<td><code>{{ c.code }}</code></td>-->
+            <td class="fw-semibold">{{ c.name }}</td>
+            <td>
+              <span class="badge {% if c.customer_type=='wholesale' %}bg-primary{% elif c.customer_type=='agent' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ {'retail':'Bán lẻ','wholesale':'Bán buôn','agent':'Đại lý'}.get(c.customer_type, c.customer_type) }}
+              </span>
+            </td>
+            <td>{{ c.phone or '-' }}</td>
+            <td>{{ c.email or '-' }}</td>
+            <td>{{ c.tax_code or '-' }}</td>
+            <td class="text-end">{{ c.credit_limit|currency if c.credit_limit else '-' }}</td>
+            <td class="text-end {% if debt > 0 %}text-warning fw-bold{% endif %}">
+              {{ debt|currency if debt > 0 else '-' }}
+            </td>
+            <td class="text-center">
+              {% if c.is_active %}<span class="badge bg-success">Hoạt động</span>
+              {% else %}<span class="badge bg-secondary">Ngừng</span>{% endif %}
+            </td>
+            <td class="text-center no-print">
+              <a href="{{ url_for('customers.edit', id=c.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
+                <i class="fas fa-edit"></i>
+              </a>
+              <form method="POST" action="{{ url_for('customers.delete', id=c.id) }}" class="d-inline"
+                    onsubmit="return confirm('Xóa khách hàng {{ c.code }}?')">
+                <button class="btn btn-sm btn-outline-danger py-0 px-2"><i class="fas fa-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="text-center text-muted py-4">Không có dữ liệu</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if customers.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ customers.total }} khách hàng</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in customers.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==customers.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('customers.index', page=page, search=search) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="fas fa-file-excel me-2"></i>Import khách hàng</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <form method="POST" action="{{ url_for('customers.import_excel') }}" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div class="alert alert-info small">Tải <a href="{{ url_for('customers.download_template') }}">file mẫu</a> trước.</div>
+        <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="submit" class="btn btn-success"><i class="fas fa-upload me-1"></i>Import</button>
+      </div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}
+

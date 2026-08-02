@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if notif else 'Thêm' }} mẫu thông báo{% endblock %}
+{% block page_title %}
+  <i class="fas fa-bell me-2"></i>
+  {{ 'Sửa: ' + notif.code if notif else 'Thêm mẫu thông báo mới' }}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>{{ 'Cập nhật mẫu thông báo' if notif else 'Tạo mẫu thông báo mới' }}</span>
+        <a href="{{ url_for('settings.notifications.notifications_list') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Danh sách
+        </a>
+      </div>
+
+      <form method="POST">
+        <div class="card-body">
+          <div class="row g-3">
+
+            <!-- Mã thông báo -->
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">
+                Mã thông báo <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="code" class="form-control text-uppercase fw-bold font-monospace"
+                     value="{{ notif.code if notif else '' }}"
+                     {% if notif %}readonly{% endif %}
+                     required placeholder="VD: STOCK_IN_CREATED">
+              <div class="form-text">Mã định danh duy nhất — dùng trong code để gọi thông báo.</div>
+            </div>
+
+            <!-- Loại thông báo -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Loại thông báo</label>
+              <select name="noti_type" class="form-select" id="notiType">
+                {% for t, label, color in [
+                  ('success', '✓ Success (thành công)', 'success'),
+                  ('info',    'ℹ Info (thông tin)',     'info'),
+                  ('warning', '⚠ Warning (cảnh báo)',  'warning'),
+                  ('error',   '✗ Error (lỗi)',         'danger'),
+                ] %}
+                <option value="{{ t }}"
+                        data-color="{{ color }}"
+                        {{ 'selected' if notif and notif.noti_type == t
+                           else ('selected' if not notif and t == 'info' else '') }}>
+                  {{ label }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Module -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Module / Phân nhóm</label>
+              <input type="text" name="module" class="form-control"
+                     value="{{ notif.module if notif else '' }}"
+                     placeholder="VD: warehouse, sales, system">
+              <div class="form-text">Dùng để lọc thông báo theo module.</div>
+            </div>
+
+            <!-- Tên thông báo -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">
+                Tên thông báo <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ notif.name if notif else '' }}"
+                     required placeholder="VD: Tạo phiếu nhập thành công">
+            </div>
+
+            <!-- Nội dung mẫu -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">
+                Nội dung mẫu thông báo <span class="text-danger">*</span>
+              </label>
+              <textarea name="message_template" id="templateInput"
+                        class="form-control font-monospace" rows="4"
+                        required
+                        placeholder="VD: Phiếu nhập {code} đã được tạo thành công!"
+                        >{{ notif.message_template if notif else '' }}</textarea>
+              <div class="form-text">
+                Dùng <code>{tên_biến}</code> cho các giá trị động.
+                Ví dụ: <code>{code}</code> <code>{name}</code> <code>{amount}</code>
+                <code>{partner_name}</code> <code>{quantity}</code>
+              </div>
+            </div>
+
+            <!-- Live preview -->
+            <div class="col-12">
+              <div class="alert mb-0" id="livePreview" role="alert">
+                <i class="fas fa-info-circle me-2" id="previewIcon"></i>
+                <span id="previewText">Nhập nội dung mẫu để xem trước...</span>
+              </div>
+            </div>
+
+            <!-- Biến phát hiện được -->
+            <div class="col-12" id="varsDetected" style="display:none">
+              <small class="text-muted">Biến phát hiện trong mẫu:</small>
+              <div id="varsBadges" class="mt-1"></div>
+            </div>
+
+            <!-- Kích hoạt -->
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox"
+                       name="is_active" id="isActive"
+                       {{ 'checked' if (not notif or notif.is_active) else '' }}>
+                <label class="form-check-label fw-semibold" for="isActive">
+                  Kích hoạt mẫu thông báo này
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+          <a href="{{ url_for('settings.notifications.notifications_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+          </a>
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-save me-1"></i>
+            {{ 'Cập nhật thông báo' if notif else 'Lưu mẫu thông báo' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Hướng dẫn sử dụng biến -->
+    <div class="card mt-3">
+      <div class="card-header">
+        <i class="fas fa-book me-2 text-info"></i>Hướng dẫn sử dụng biến trong mẫu thông báo
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <p class="fw-semibold small mb-2">Biến thường dùng:</p>
+            <table class="table table-sm table-bordered small">
+              <thead class="table-light">
+                <tr><th>Biến</th><th>Mô tả</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>{code}</code></td><td>Mã chứng từ</td></tr>
+                <tr><td><code>{name}</code></td><td>Tên đối tượng</td></tr>
+                <tr><td><code>{amount}</code></td><td>Số tiền</td></tr>
+                <tr><td><code>{quantity}</code></td><td>Số lượng</td></tr>
+                <tr><td><code>{partner_name}</code></td><td>Tên đối tác (KH/NCC)</td></tr>
+                <tr><td><code>{days}</code></td><td>Số ngày</td></tr>
+                <tr><td><code>{balance}</code></td><td>Số dư công nợ</td></tr>
+                <tr><td><code>{count}</code></td><td>Số lượng bản ghi</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <p class="fw-semibold small mb-2">Ví dụ mẫu:</p>
+            <div class="font-monospace small bg-light p-2 rounded mb-2">
+              Phiếu nhập <strong>{code}</strong> đã xác nhận!<br>
+              Tồn kho đã được cập nhật.
+            </div>
+            <div class="font-monospace small bg-light p-2 rounded mb-2">
+              Cảnh báo: <strong>{name}</strong> còn<br>
+              <strong>{quantity}</strong> {unit} — dưới mức tối thiểu!
+            </div>
+            <div class="font-monospace small bg-light p-2 rounded">
+              Công nợ của <strong>{partner_name}</strong><br>
+              đã quá hạn <strong>{days}</strong> ngày!<br>
+              Số dư: <strong>{balance}</strong> VND
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const typeMap = {
+  success: { icon: 'fas fa-check-circle',       cls: 'alert-success' },
+  info:    { icon: 'fas fa-info-circle',         cls: 'alert-info'    },
+  warning: { icon: 'fas fa-exclamation-triangle',cls: 'alert-warning' },
+  error:   { icon: 'fas fa-times-circle',        cls: 'alert-danger'  },
+};
+
+function updatePreview() {
+  const tmpl   = document.getElementById('templateInput').value.trim();
+  const type   = document.getElementById('notiType').value;
+  const prev   = document.getElementById('livePreview');
+  const pText  = document.getElementById('previewText');
+  const pIcon  = document.getElementById('previewIcon');
+  const tm     = typeMap[type] || typeMap.info;
+
+  // Update alert class
+  prev.className = `alert mb-0 ${tm.cls}`;
+  pIcon.className = `${tm.icon} me-2`;
+
+  if (!tmpl) {
+    pText.textContent = 'Nhập nội dung mẫu để xem trước...';
+    document.getElementById('varsDetected').style.display = 'none';
+    return;
+  }
+
+  // Replace {var} with sample values
+  const vars = [...new Set([...tmpl.matchAll(/\{(\w+)\}/g)].map(m => m[1]))];
+  let preview = tmpl;
+  vars.forEach(v => {
+    preview = preview.replaceAll(`{${v}}`, `<strong class="text-decoration-underline">&lt;${v}&gt;</strong>`);
+  });
+  pText.innerHTML = preview;
+
+  // Show detected vars
+  const varDiv = document.getElementById('varsDetected');
+  const varBadges = document.getElementById('varsBadges');
+  if (vars.length) {
+    varDiv.style.display = 'block';
+    varBadges.innerHTML = vars.map(v =>
+      `<span class="badge bg-secondary me-1 mb-1 font-monospace">{${v}}</span>`
+    ).join('');
+  } else {
+    varDiv.style.display = 'none';
+  }
+}
+
+document.getElementById('templateInput').addEventListener('input', updatePreview);
+document.getElementById('notiType').addEventListener('change', updatePreview);
+
+// Initial render
+updatePreview();
+</script>
+{% endblock %}

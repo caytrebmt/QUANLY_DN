@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Tồn kho Realtime{% endblock %}
+{% block page_title %}
+  <i class="fas fa-satellite-dish me-2 text-success"></i>Tồn kho thời gian thực
+  <span class="badge bg-success ms-2 small" id="liveBadge">
+    <i class="fas fa-circle me-1" style="font-size:8px"></i>LIVE
+  </span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.realtime-badge { animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.stock-critical { background: #fff5f5 !important; }
+.stock-low { background: #fffbf0 !important; }
+.stock-ok { background: #f0fff4 !important; }
+.qty-cell { font-family: monospace; font-size: 15px; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Live KPIs -->
+<div class="row g-3 mb-3" id="kpiRow">
+  <div class="col-md-3">
+    <div class="kpi-card" style="background:linear-gradient(135deg,#065f46,#10b981)">
+      <div class="d-flex justify-content-between">
+        <div>
+          <div class="kpi-label">Tổng giá trị tồn kho</div>
+          <div class="kpi-value" id="kpiTotalValue">{{ total_value|currency }}</div>
+          <div class="small opacity-75">VND</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card" style="background:linear-gradient(135deg,#1a3a5c,#2563a8)">
+      <div class="d-flex justify-content-between">
+        <div>
+          <div class="kpi-label">Số loại hàng tồn</div>
+          <div class="kpi-value" id="kpiTotalItems">{{ data|length }}</div>
+          <div class="small opacity-75">sản phẩm</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-box"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#c084fc)">
+      <div class="d-flex justify-content-between">
+        <div>
+          <div class="kpi-label">Hàng dưới mức tối thiểu</div>
+          <div class="kpi-value text-warning" id="kpiLowCount">{{ low_count }}</div>
+          <div class="small opacity-75">sản phẩm cần đặt hàng</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center py-2" id="updateTimeCard">
+      <div class="text-muted small mb-1">Cập nhật lần cuối</div>
+      <div class="fw-bold" id="lastUpdate">--:--:--</div>
+      <div class="text-muted small">Auto refresh <span id="countdown">30</span>s</div>
+      <button class="btn btn-sm btn-outline-success mt-1" id="refreshBtn">
+        <i class="fas fa-sync me-1"></i>Cập nhật ngay
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="fas fa-table me-2"></i>Bảng tồn kho hiện tại</span>
+    <div class="d-flex gap-2 flex-wrap">
+      <select id="filterWarehouse" class="form-select form-select-sm" style="width:auto">
+        <option value="">-- Tất cả kho --</option>
+        {% for w in warehouses %}
+        <option value="{{ w.id }}" {{ 'selected' if warehouse_id and warehouse_id==w.id|string }}>{{ w.name }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" id="filterSearch" class="form-control form-control-sm" style="width:200px"
+             placeholder="Tìm mã, tên hàng...">
+      <div class="form-check mt-1 ms-1">
+        <input type="checkbox" id="filterLow" class="form-check-input">
+        <label class="form-check-label small text-danger" for="filterLow">Chỉ hàng thiếu</label>
+      </div>
+      <a href="{{ url_for('inventory.export_excel') }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>Excel
+      </a>
+      <a href="{{ url_for('inventory.export_pdf') }}" target="_blank" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-file-pdf me-1"></i>PDF
+      </a>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" id="inventoryTable" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Mã hàng</th><th>Tên hàng hóa</th><th>ĐVT</th><th>Nhóm</th>
+            <th class="text-end">Tồn kho</th>
+            <th class="text-end">Tồn tối thiểu</th>
+            <th class="text-end">Giá vốn BQ</th>
+            <th class="text-end">Giá trị tồn</th>
+            <th class="text-center">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryBody">
+          {% for r in data %}
+          {% set qty = r.qty|float %}
+          {% set min_s = r.min_stock|float %}
+          {% set is_zero = qty == 0 %}
+          {% set is_low = qty <= min_s and min_s > 0 %}
+          <tr class="{{ 'stock-critical' if is_zero else 'stock-low' if is_low else '' }}"
+              data-code="{{ r.code }}" data-name="{{ r.name }}"
+              data-low="{{ '1' if is_low else '0' }}">
+            <td><code>{{ r.code }}</code></td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.unit }}</td>
+            <td><span class="badge bg-secondary">{{ r.category or '-' }}</span></td>
+            <td class="text-end qty-cell {{ 'text-danger' if is_low or is_zero else 'text-success' }}">
+              {{ qty_display_map.get(r.id, qty|round(3)) }}
+            </td>
+            <td class="text-end text-muted">
+              {{ min_s|round(0)|int if min_s > 0 else '-' }}
+            </td>
+            <td class="text-end">{{ r.avg_cost|float|round(0)|int|currency }}</td>
+            <td class="text-end fw-semibold">{{ r.value|currency }}</td>
+            <td class="text-center">
+              {% if is_zero %}
+                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Hết hàng</span>
+              {% elif is_low %}
+                <span class="badge bg-warning text-dark">
+                  <i class="fas fa-exclamation-triangle me-1"></i>Thiếu hàng
+                </span>
+              {% else %}
+                <span class="badge bg-success"><i class="fas fa-check me-1"></i>OK</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">Chưa có dữ liệu tồn kho</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let countdown = 30;
+let timer;
+
+function updateTime() {
+  const now = new Date();
+  document.getElementById('lastUpdate').textContent =
+    now.toLocaleTimeString('vi-VN');
+}
+
+function startCountdown() {
+  clearInterval(timer);
+  countdown = 30;
+  timer = setInterval(() => {
+    countdown--;
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = countdown;
+    if (countdown <= 0) {
+      location.reload();
+    }
+  }, 1000);
+}
+
+// Client-side filter
+function applyFilters() {
+  const search   = document.getElementById('filterSearch').value.toLowerCase();
+  const filterLow = document.getElementById('filterLow').checked;
+  const rows = document.querySelectorAll('#inventoryTable tbody tr');
+  rows.forEach(row => {
+    const code    = (row.dataset.code || '').toLowerCase();
+    const name    = (row.dataset.name || '').toLowerCase();
+    const isLow   = row.dataset.low === '1';
+    const matchTxt = !search || code.includes(search) || name.includes(search);
+    const matchLow = !filterLow || isLow;
+    row.style.display = (matchTxt && matchLow) ? '' : 'none';
+  });
+}
+
+document.getElementById('filterSearch').addEventListener('input', applyFilters);
+document.getElementById('filterLow').addEventListener('change', applyFilters);
+
+document.getElementById('filterWarehouse').addEventListener('change', function() {
+  const wid = this.value;
+  const url = new URL(window.location);
+  if (wid) url.searchParams.set('warehouse_id', wid);
+  else url.searchParams.delete('warehouse_id');
+  window.location = url;
+});
+
+document.getElementById('refreshBtn').addEventListener('click', () => location.reload());
+
+updateTime();
+startCountdown();
+
+// Pulse badge
+setInterval(() => {
+  const badge = document.getElementById('liveBadge');
+  badge.style.opacity = badge.style.opacity === '0.3' ? '1' : '0.3';
+}, 800);
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Đơn online{% endblock %}
+{% block page_title %}<i class="fas fa-receipt me-2 text-primary"></i>E-commerce - Đơn online{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Đơn Hàng Online</span>
+    <a href="{{ url_for('ecommerce.listings') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-store me-1"></i>Sản phẩm web
+    </a>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-3">
+      <div class="col-md-5">
+        <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
+               placeholder="Tìm mã đơn, tên khách, SĐT...">
+      </div>
+      <div class="col-md-3">
+        <select name="sync_status" class="form-select form-select-sm">
+          <option value="">-- Tất cả sync --</option>
+          <option value="pending" {{ 'selected' if sync_status=='pending' }}>Chờ sync</option>
+          <option value="synced" {{ 'selected' if sync_status=='synced' }}>Đã sync</option>
+          <option value="failed" {{ 'selected' if sync_status=='failed' }}>Lỗi sync</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Tìm</button>
+        <a href="{{ url_for('ecommerce.orders') }}" class="btn btn-sm btn-outline-secondary ms-1">Reset</a>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Mã đơn</th>
+            <th>Ngày</th>
+            <th>Khách hàng</th>
+            <th class="text-end">Tổng cộng</th>
+            <th class="text-center">Sync</th>
+            <th>Phiếu xuất</th>
+            <th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders.items %}
+          <tr>
+            <td class="fw-semibold">
+              <a href="{{ url_for('ecommerce.order_detail', id=order.id) }}">
+                {{ order.code }}
+              </a>
+            </td>
+            <td>{{ order.created_at|dateformat }}</td>
+            <td>
+              <div>{{ order.customer_name }}</div>
+              <small class="text-muted">{{ order.customer_phone or order.customer_email or '' }}</small>
+            </td>
+            <td class="text-end fw-semibold">{{ order.total_amount|currency }}</td>
+            <td class="text-center">
+              {% if order.sync_status == 'synced' %}
+              <span class="badge bg-success">Đã sync</span>
+              {% elif order.sync_status == 'failed' %}
+              <span class="badge bg-danger">Lỗi</span>
+              {% else %}
+              <span class="badge bg-warning text-dark">Chờ</span>
+              {% endif %}
+              {% if order.sync_error %}<div class="small text-danger">{{ order.sync_error }}</div>{% endif %}
+            </td>
+            <td>
+              {% if order.stock_out %}
+              <a href="{{ url_for('stock_out.detail', id=order.stock_out.id) }}">{{ order.stock_out.code }}</a>
+              {% else %}
+              -
+              {% endif %}
+            </td>
+            <td class="text-center no-print">
+              {% if not order.stock_out_id %}
+              <form method="POST" action="{{ url_for('ecommerce.sync_order', id=order.id) }}" class="d-inline-flex gap-1 align-items-center">
+                <select name="warehouse_id" class="form-select form-select-sm" style="width: 150px;">
+                  {% for w in warehouses %}
+                  <option value="{{ w.id }}">{{ w.code }} - {{ w.name }}</option>
+                  {% endfor %}
+                </select>
+                <label class="small text-nowrap">
+                  <input type="checkbox" name="confirm_inventory" value="1"> trừ kho
+                </label>
+                <button class="btn btn-sm btn-primary py-0 px-2">Sync ERP</button>
+              </form>
+              {% else %}
+              <span class="text-muted small">Đã xử lý</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center text-muted py-4">Chưa có đơn online</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if orders.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ orders.total }} đơn</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in orders.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==orders.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('ecommerce.orders', page=page, search=search, sync_status=sync_status) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">...</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+<!-- templates/shop/order_success.html -->
+{% extends "shop/base.html" %}
+
+{% block title %}Đặt hàng thành công{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
+        <!-- Success Header -->
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-8 text-center">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i class="fas fa-check text-white text-3xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Đặt hàng thành công! 🎉</h1>
+            <p class="text-gray-600">Cảm ơn bạn đã tin tưởng {{ app_name }}. Đơn hàng đang được xử lý.</p>
+        </div>
+
+        <!-- Order Code -->
+        <div class="p-6 border-b border-gray-100 text-center">
+            <div class="inline-flex items-center gap-3 px-6 py-3 bg-gray-50 rounded-xl">
+                <span class="text-gray-500">Mã đơn hàng:</span>
+                <span class="font-mono font-bold text-primary text-lg">{{ order.code }}</span>
+                <button onclick="copyCode('{{ order.code }}')" class="text-gray-400 hover:text-accent transition">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="p-6 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800 mb-4">Trạng thái đơn hàng</h3>
+            <div class="flex items-center justify-between">
+                <div class="text-center flex-1">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-check text-white text-sm"></i>
+                    </div>
+                    <div class="text-sm font-medium text-gray-800">Đặt hàng</div>
+                    <div class="text-xs text-gray-400">{{ order.created_at.strftime('%H:%M') if order.created_at else '' }}</div>
+                </div>
+                <div class="flex-1 h-0.5 bg-green-500"></div>
+                <div class="text-center flex-1">
+                    <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2 animate-pulse">
+                        <i class="fas fa-spinner fa-spin text-white text-sm"></i>
+                    </div>
+                    <div class="text-sm font-medium text-gray-800">Đang xử lý</div>
+                    <div class="text-xs text-gray-400">Chờ xác nhận</div>
+                </div>
+                <div class="flex-1 h-0.5 bg-gray-200"></div>
+                <div class="text-center flex-1">
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-truck text-gray-400 text-sm"></i>
+                    </div>
+                    <div class="text-sm text-gray-500">Vận chuyển</div>
+                </div>
+                <div class="flex-1 h-0.5 bg-gray-200"></div>
+                <div class="text-center flex-1">
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-check-double text-gray-400 text-sm"></i>
+                    </div>
+                    <div class="text-sm text-gray-500">Hoàn tất</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Info -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div class="p-4 bg-gray-50 rounded-xl">
+                    <div class="text-xs text-gray-500 mb-1">Thời gian đặt</div>
+                    <div class="font-medium">{{ order.created_at.strftime('%H:%M %d/%m/%Y') if order.created_at else 'Vừa xong' }}</div>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl">
+                    <div class="text-xs text-gray-500 mb-1">Khách hàng</div>
+                    <div class="font-medium">{{ order.customer_name or '—' }}</div>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl">
+                    <div class="text-xs text-gray-500 mb-1">Tổng tiền</div>
+                    <div class="font-bold text-primary text-lg">{{ order.total_amount|currency }}</div>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl">
+                    <div class="text-xs text-gray-500 mb-1">Thanh toán</div>
+                    <div class="font-medium">COD / Chuyển khoản</div>
+                </div>
+            </div>
+
+            <!-- ERP Note -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-xl flex items-start gap-3">
+                <i class="fas fa-sync-alt fa-spin text-blue-500 mt-0.5"></i>
+                <div class="text-sm text-blue-800">
+                    <strong>Đơn hàng đang được xử lý</strong><br>
+                    Phiếu xuất kho sẽ được tạo. Bạn sẽ nhận email xác nhận sớm.
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{{ url_for('shop.catalog') }}" class="flex-1 px-5 py-3 border border-gray-200 rounded-xl text-center font-medium hover:bg-gray-50 transition">
+                    <i class="fas fa-store mr-2"></i>Tiếp tục mua hàng
+                </a>
+                <a href="{{ url_for('shop.order_detail', code=order.code) }}" class="flex-1 px-5 py-3 bg-primary text-white rounded-xl text-center font-medium hover:bg-primaryDark transition">
+                    <i class="fas fa-file-invoice mr-2"></i>Xem chi tiết đơn
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+        <div class="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+            <i class="fas fa-truck-fast text-2xl text-accent"></i>
+            <div>
+                <div class="font-semibold text-gray-800 text-sm">Giao hàng 24h</div>
+                <div class="text-xs text-gray-500">Nội thành HCM & Hà Nội</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+            <i class="fas fa-file-invoice-dollar text-2xl text-accent"></i>
+            <div>
+                <div class="font-semibold text-gray-800 text-sm">Hóa đơn VAT</div>
+                <div class="text-xs text-gray-500">Xuất trong 24h sau xác nhận</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+            <i class="fas fa-headset text-2xl text-accent"></i>
+            <div>
+                <div class="font-semibold text-gray-800 text-sm">Hỗ trợ đơn hàng</div>
+                <div class="text-xs text-gray-500">Hotline: 1800 1234</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            showToast('Đã sao chép mã đơn hàng: ' + code, 'success');
+        }).catch(() => {
+            showToast('Không thể sao chép tự động', 'error');
+        });
+    }
+</script>
+{% endblock %}

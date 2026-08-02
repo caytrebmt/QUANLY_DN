@@ -1,0 +1,67 @@
+{% extends "base.html" %} {% block title %}Quản lý người dùng{% endblock %} {%
+block page_title %}<i class="fas fa-users-cog me-2"></i>Quản lý người dùng{%
+endblock %} {% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between">
+    <span>Danh sách người dùng</span>
+    <a
+      href="{{ url_for('settings.users.create_user') }}"
+      class="btn btn-sm btn-primary"
+    >
+      <i class="fas fa-user-plus me-1"></i>Thêm người dùng
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Họ tên</th>
+            <th>Email</th>
+            <th class="text-center">Vai trò</th>
+            <th>Đăng nhập lần cuối</th>
+            <th class="text-center">TT</th>
+            <th class="text-center">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="fw-bold">{{ u.username }}</td>
+            <td>{{ u.full_name }}</td>
+            <td>{{ u.email }}</td>
+            <td class="text-center">
+              <span
+                class="badge {% if u.role=='admin' %}bg-danger{% elif u.role=='accountant' %}bg-warning text-dark{% else %}bg-primary{% endif %}"
+              >
+                {{ {'admin':'Quản trị','user':'Người dùng','accountant':'Kế
+                toán','warehouse':'Thủ kho'}.get(u.role, u.role) }}
+              </span>
+            </td>
+            <td>
+              {{ u.last_login.strftime('%d/%m/%Y %H:%M') if u.last_login else
+              '-' }}
+            </td>
+            <td class="text-center">
+              {% if u.is_active %}<span class="badge bg-success"
+                >Hoạt động</span
+              >
+              {% else %}<span class="badge bg-secondary">Khóa</span>{% endif %}
+            </td>
+            <td class="text-center">
+              <a
+                href="{{ url_for('settings.users.edit_user', id=u.id) }}"
+                class="btn btn-sm btn-outline-primary py-0 px-2"
+              >
+                <i class="fas fa-edit"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Công nợ{% endblock %}
+{% block page_title %}<i class="fas fa-file-invoice-dollar me-2"></i>Quản lý công nợ{% endblock %}
+{% block content %}
+<!-- KPIs -->
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="text-primary mb-1 fs-4"><i class="fas fa-money-bill-wave"></i></div>
+      <div class="fw-bold fs-5">{{ total_amount|currency }}</div>
+      <div class="text-muted small">Tổng phát sinh</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="text-success mb-1 fs-4"><i class="fas fa-check-circle"></i></div>
+      <div class="fw-bold fs-5 text-success">{{ total_paid|currency }}</div>
+      <div class="text-muted small">Đã thanh toán</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="text-warning mb-1 fs-4"><i class="fas fa-clock"></i></div>
+      <div class="fw-bold fs-5 text-warning">{{ total_balance|currency }}</div>
+      <div class="text-muted small">Còn phải {% if partner_type=='customer' %}thu{% else %}trả{% endif %}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center py-3">
+      <div class="text-danger mb-1 fs-4"><i class="fas fa-exclamation-circle"></i></div>
+      <div class="fw-bold fs-5 text-danger">{{ total_overdue|currency }}</div>
+      <div class="text-muted small">Quá hạn</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('debt.index', partner_type='customer') }}"
+         class="btn btn-sm {{ 'btn-primary' if partner_type=='customer' else 'btn-outline-primary' }}">
+        <i class="fas fa-hand-holding-usd me-1"></i>Phải thu
+      </a>
+      <a href="{{ url_for('debt.index', partner_type='supplier') }}"
+         class="btn btn-sm {{ 'btn-warning' if partner_type=='supplier' else 'btn-outline-warning' }}">
+        <i class="fas fa-file-invoice me-1"></i>Phải trả
+      </a>
+      <a href="{{ url_for('debt.summary', partner_type=partner_type) }}" class="btn btn-sm btn-outline-info">
+        <i class="fas fa-table me-1"></i>Tổng hợp
+      </a>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('debt.export_excel', partner_type=partner_type) }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-file-excel me-1"></i>Xuất Excel
+      </a>
+    </div>
+  </div>
+  <div class="card-body pb-0">
+    <form method="GET" class="row g-2 mb-2">
+      <input type="hidden" name="partner_type" value="{{ partner_type }}">
+      <div class="col-md-3">
+        <select name="status" class="form-select form-select-sm">
+          <option value="">-- Tất cả TT --</option>
+          <option value="open" {{ 'selected' if status=='open' }}>Chưa TT</option>
+          <option value="partial" {{ 'selected' if status=='partial' }}>TT một phần</option>
+          <option value="overdue" {{ 'selected' if status=='overdue' }}>Quá hạn</option>
+          <option value="paid" {{ 'selected' if status=='paid' }}>Đã TT</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Lọc</button>
+      </div>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-erp table-hover mb-0" data-advanced-table="light">
+        <thead>
+          <tr>
+            <th>Đối tác</th><th>Số chứng từ</th><th>Ngày PS</th><th>Ngày đến hạn</th>
+            <th class="text-end">Số tiền</th><th class="text-end">Đã TT</th>
+            <th class="text-end">Còn lại</th><th class="text-center">TT</th>
+            <th class="text-center no-print">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in enriched %}
+          {% set d = item.debt %}
+          {% set p = item.partner %}
+          <tr>
+            <td class="fw-semibold">{{ p.name if p else '-' }}</td>
+            <td><code>{{ d.reference_code or '-' }}</code></td>
+            <td>{{ d.date|dateformat }}</td>
+            <td class="{{ 'text-danger fw-bold' if d.status=='overdue' }}">
+              {{ d.due_date|dateformat if d.due_date else '-' }}
+            </td>
+            <td class="text-end">{{ d.amount|currency }}</td>
+            <td class="text-end text-success">{{ d.paid_amount|currency }}</td>
+            <td class="text-end fw-bold {{ 'text-danger' if d.balance > 0 else '' }}">{{ d.balance|currency }}</td>
+            <td class="text-center"><span class="badge badge-{{ d.status }}">
+              {{ {'open':'Chưa TT','partial':'TT một phần','paid':'Đã TT','overdue':'Quá hạn'}.get(d.status, d.status) }}
+            </span></td>
+            <td class="text-center no-print">
+              {% if d.status != 'paid' %}
+              <a href="{{ url_for('debt.pay', id=d.id) }}" class="btn btn-sm btn-outline-success py-0 px-2">
+                <i class="fas fa-credit-card me-1"></i>Thanh toán
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">Không có công nợ</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if debts.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+      <small class="text-muted">{{ debts.total }} bản ghi</small>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% for page in debts.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+          {% if page %}<li class="page-item {% if page==debts.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('debt.index', page=page, partner_type=partner_type, status=status) }}">{{ page }}</a>
+          </li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endfor %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

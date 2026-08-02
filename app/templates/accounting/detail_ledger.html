@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Sổ chi tiết {{ account_code }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="fas fa-list-alt me-2"></i>SỔ CHI TIẾT {{ account_code }}{% if account %} - {{ account.name }}{% endif %}
+    </h5>
+    <a
+      href="{{ url_for('accounting.export_detail_ledger', account_code=account_code, start=start_date|dateformat('%Y-%m-%d'), end=end_date|dateformat('%Y-%m-%d'), partner_id=partner_id) }}"
+      class="btn btn-sm btn-success"
+    >
+      <i class="fas fa-file-excel me-1"></i>Xuất Excel
+    </a>
+  </div>
+  <div class="card-body">
+    <form class="row g-2 mb-3" method="get">
+      <div class="col-md-3">
+        <label class="form-label">Từ ngày</label>
+        <input type="date" name="start" class="form-control" value="{{ start_date|dateformat('%Y-%m-%d') }}" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Đến ngày</label>
+        <input type="date" name="end" class="form-control" value="{{ end_date|dateformat('%Y-%m-%d') }}" />
+      </div>
+      {% if partners %}
+      <div class="col-md-4">
+        <label class="form-label">{{ 'Khách hàng' if account_code == '131' else 'Nhà cung cấp' }}</label>
+        <select name="partner_id" class="form-select">
+          <option value="">-- Tất cả --</option>
+          {% for p in partners %}
+          <option value="{{ p.id }}" {% if partner_id == p.id %}selected{% endif %}>{{ p.code }} - {{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-md-2 align-self-end">
+        <button class="btn btn-primary w-100" type="submit">Xem</button>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 220px">Đối tượng</th>
+            <th style="width: 110px">Ngày</th>
+            <th style="width: 140px">Chứng từ</th>
+            <th>Diễn giải</th>
+            <th class="text-end" style="width: 130px">Nợ</th>
+            <th class="text-end" style="width: 130px">Có</th>
+            <th class="text-end" style="width: 150px">Dư Nợ</th>
+            <th class="text-end" style="width: 150px">Dư Có</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set ns = namespace(current='') %}
+          {% for line in lines %}
+            {% if line.partner_name != ns.current %}
+            {% set ns.current = line.partner_name %}
+            <tr class="table-secondary fw-bold">
+              <td colspan="8">{{ line.partner_name }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td></td>
+              <td>{{ line.date|dateformat }}</td>
+              <td>{{ line.entry_code or '' }}</td>
+              <td>{{ line.description or '' }}</td>
+              <td class="text-end">{{ line.debit|currency if line.debit else '' }}</td>
+              <td class="text-end">{{ line.credit|currency if line.credit else '' }}</td>
+              <td class="text-end">{{ line.running_debit_balance|currency if line.running_debit_balance else '' }}</td>
+              <td class="text-end">{{ line.running_credit_balance|currency if line.running_credit_balance else '' }}</td>
+            </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted">Không có dữ liệu</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Flask / instance
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+.env.prod
+.flaskenv
+
+# Archives
+*.rar
+*.zip
+*.7z
+*.tar.gz
+*.gz
+
+# Node / frontend
+node_modules/
+.venv
+webshop/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Project specific
+logs/
+temp/
+*.log
+backups/

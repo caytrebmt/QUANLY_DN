@@ -1,0 +1,257 @@
+<!-- templates/shop/checkout.html -->
+{% extends "shop/base.html" %}
+{% from "shop/macros/shop_macros.html" import checkout_step, trust_badge %}
+
+{% block title %}Thanh toán{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Title & Steps -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-clipboard-list text-accent"></i> Thanh toán
+        </h1>
+        <div class="flex items-center gap-2 text-sm">
+            {{ checkout_step(done=True, active=False, num=1, label='Giỏ hàng', icon='fa-shopping-cart') }}
+            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+            {{ checkout_step(done=False, active=True, num=2, label='Thông tin', icon='fa-user') }}
+            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+            {{ checkout_step(done=False, active=False, num=3, label='Hoàn tất', icon='fa-check-circle') }}
+        </div>
+    </div>
+
+    <form method="POST" id="checkoutForm" class="flex flex-col lg:flex-row gap-8">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <!-- LEFT: Forms -->
+        <div class="flex-1 space-y-6">
+            <!-- Delivery Info -->
+            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b border-gray-100 flex items-center gap-3">
+                    <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">1</div>
+                    <i class="fas fa-user text-gray-400"></i>
+                    <h3 class="font-semibold text-gray-800">Thông tin người nhận</h3>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên <span class="text-red-500">*</span></label>
+                            <input type="text" name="customer_name" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" 
+                                   value="{{ current_user.name if is_web_customer() else '' }}" placeholder="Nguyễn Văn A">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                            <input type="tel" name="customer_phone" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" 
+                                   value="{{ current_user.phone if is_web_customer() else '' }}" placeholder="0901 234 567">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" name="customer_email" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" 
+                                   value="{{ current_user.email if is_web_customer() else '' }}" placeholder="you@company.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tên công ty (xuất VAT)</label>
+                            <input type="text" name="company_name" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" 
+                                   value="{{ current_user.company_name if is_web_customer() else '' }}" placeholder="Công ty TNHH...">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ giao hàng</label>
+                            <input type="text" name="shipping_address" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" 
+                                   placeholder="Số nhà, đường, phường, quận, tỉnh/thành...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phí giao hàng (đ)</label>
+                            <input type="number" name="shipping_fee" id="shippingFee" value="0" step="1000" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mã khuyến mãi</label>
+                            <input type="text" name="promotion_code" id="promoCode" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" placeholder="Nhập mã nếu có">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú đơn hàng</label>
+                            <textarea name="note" rows="3" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-accent focus:outline-none" placeholder="Yêu cầu đặc biệt, xuất VAT, thời gian giao hàng..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b border-gray-100 flex items-center gap-3">
+                    <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">2</div>
+                    <i class="fas fa-credit-card text-gray-400"></i>
+                    <h3 class="font-semibold text-gray-800">Phương thức thanh toán</h3>
+                </div>
+                <div class="p-5 space-y-3">
+                    <label class="payment-option flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-accent transition has-[:checked]:border-accent has-[:checked]:bg-accent/5">
+                        <input type="radio" name="payment_method" value="cod" class="mt-1 w-4 h-4 text-accent focus:ring-accent" checked>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-money-bill-wave text-xl text-green-600"></i>
+                                <span class="font-medium">Thanh toán khi nhận hàng (COD)</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Phổ biến</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">Trả tiền mặt hoặc chuyển khoản khi nhận hàng</p>
+                        </div>
+                    </label>
+                    <label class="payment-option flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-accent transition has-[:checked]:border-accent has-[:checked]:bg-accent/5">
+                        <input type="radio" name="payment_method" value="bank" class="mt-1 w-4 h-4 text-accent focus:ring-accent">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-building-columns text-xl text-blue-600"></i>
+                                <span class="font-medium">Chuyển khoản ngân hàng</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">Chuyển khoản trước — xử lý đơn sau khi nhận tiền</p>
+                        </div>
+                    </label>
+                    <label class="payment-option flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-accent transition has-[:checked]:border-accent has-[:checked]:bg-accent/5">
+                        <input type="radio" name="payment_method" value="vnpay" class="mt-1 w-4 h-4 text-accent focus:ring-accent">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-qrcode text-xl text-purple-600"></i>
+                                <span class="font-medium">VNPay / Ví điện tử</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">QR Code, Momo, ZaloPay, Shopee Pay...</p>
+                        </div>
+                    </label>
+                    <label class="payment-option flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-accent transition has-[:checked]:border-accent has-[:checked]:bg-accent/5">
+                        <input type="radio" name="payment_method" value="credit" class="mt-1 w-4 h-4 text-accent focus:ring-accent">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-handshake text-xl text-orange-600"></i>
+                                <span class="font-medium">Công nợ B2B / Trả sau</span>
+                                <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">Doanh nghiệp</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">Theo hợp đồng đã ký với bộ phận kinh doanh</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-4">
+                <a href="{{ url_for('shop.cart') }}" class="px-6 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại giỏ
+                </a>
+                <button type="submit" class="flex-1 py-3 bg-accent text-white rounded-xl font-semibold hover:bg-accentDark transition">
+                    <i class="fas fa-check-circle mr-2"></i>Đặt hàng ngay
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT: Order Summary -->
+        <div class="lg:w-96">
+            <div class="bg-white rounded-xl border border-gray-100 sticky top-24">
+                <div class="p-5 border-b border-gray-100">
+                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-receipt text-accent"></i> Đơn hàng của bạn
+                    </h3>
+                </div>
+                
+                <!-- Items -->
+                <div class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                    {% for item in items %}
+                    <div class="p-4 flex gap-3">
+                        <img src="{{ item.listing.image_url or url_for('shop.product_placeholder', code=item.product.code if item.product else 'X', name=item.listing.display_name() if item.listing else '') }}" 
+                             class="w-16 h-16 object-contain bg-gray-50 rounded-lg" alt="">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-800 text-sm line-clamp-2">{{ item.listing.display_name() if item.listing else item.product.name }}</h4>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs text-gray-500">x{{ item.quantity|int if item.quantity == item.quantity|int else item.quantity }}</span>
+                                <span class="font-medium text-primary text-sm">{{ (item.quantity * item.unit_price)|currency }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Totals -->
+                <div class="p-5 border-t border-gray-100 space-y-3">
+                    <div class="flex justify-between text-gray-600 text-sm">
+                        <span>Tạm tính</span>
+                        <span id="summarySubtotal">{{ subtotal|currency }}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600 text-sm">
+                        <span>Phí giao hàng</span>
+                        <span id="summaryShipping" class="text-green-600">Miễn phí</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600 text-sm">
+                        <span>Thuế VAT</span>
+                        <span>Đã bao gồm</span>
+                    </div>
+                    <div class="pt-3 border-t border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-800">Tổng cộng</span>
+                            <span class="font-bold text-xl text-primary" id="summaryTotal">{{ subtotal|currency }}</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" form="checkoutForm" class="w-full mt-4 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primaryDark transition">
+                        <i class="fas fa-lock mr-2"></i>Đặt hàng ngay
+                    </button>
+                    
+                    <div class="flex justify-center gap-4 pt-3 text-xs text-gray-400">
+                        <span><i class="fas fa-shield-alt mr-1"></i>Bảo mật SSL</span>
+                        <span><i class="fas fa-file-invoice mr-1"></i>Xuất VAT</span>
+                        <span><i class="fas fa-undo mr-1"></i>Đổi trả 7 ngày</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trust badges -->
+            <div class="mt-4 grid grid-cols-2 gap-3">
+                {{ trust_badge('fa-truck-fast', '#d4a373', 'Giao 24h', 'Nội thành HCM/HN') }}
+                {{ trust_badge('fa-undo', '#f59e0b', 'Đổi trả 7 ngày', 'Lỗi sản xuất') }}
+                {{ trust_badge('fa-file-invoice', '#0f3b2c', 'Xuất VAT', 'Theo yêu cầu DN') }}
+                {{ trust_badge('fa-headset', '#7b1fa2', 'Hỗ trợ B2B', 'Báo giá, hợp đồng') }}
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const BASE_SUBTOTAL = {{ subtotal }};
+    
+    function fmtVND(n) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.round(n));
+    }
+    
+    function updateSummary() {
+        const shipping = parseFloat(document.getElementById('shippingFee')?.value) || 0;
+        const shippingDisplay = document.getElementById('summaryShipping');
+        const totalDisplay = document.getElementById('summaryTotal');
+        const total = BASE_SUBTOTAL + shipping;
+        
+        if (shippingDisplay) {
+            if (shipping > 0) {
+                shippingDisplay.textContent = fmtVND(shipping);
+                shippingDisplay.classList.remove('text-green-600');
+                shippingDisplay.classList.add('text-gray-700');
+            } else {
+                shippingDisplay.textContent = 'Miễn phí';
+                shippingDisplay.classList.add('text-green-600');
+                shippingDisplay.classList.remove('text-gray-700');
+            }
+        }
+        if (totalDisplay) totalDisplay.textContent = fmtVND(total);
+    }
+    
+    document.getElementById('shippingFee')?.addEventListener('input', updateSummary);
+    updateSummary();
+    
+    // Highlight selected payment method
+    document.querySelectorAll('.payment-option').forEach(option => {
+        const radio = option.querySelector('input[type="radio"]');
+        if (radio?.checked) option.classList.add('border-accent', 'bg-accent/5');
+        
+        radio?.addEventListener('change', function() {
+            document.querySelectorAll('.payment-option').forEach(opt => {
+                opt.classList.remove('border-accent', 'bg-accent/5');
+            });
+            if (this.checked) {
+                option.classList.add('border-accent', 'bg-accent/5');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if product else 'Thêm' }} hàng hóa{% endblock %}
+{% block page_title %}<i class="fas fa-box me-2"></i>{{ 'Sửa: ' + product.code if product else 'Thêm hàng hóa mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <div class="card">
+      <div class="card-header">{{ 'Cập nhật: ' + product.code if product else 'Thêm hàng hóa mới' }}</div>
+      <form method="POST" enctype="multipart/form-data">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                  Mã hàng
+                </label>
+
+                <input type="text"
+                      name="code"
+                      id="productCode"
+                      class="form-control text-uppercase"
+                      value="{{ product.code if product else '' }}"
+                      placeholder="Để trống để tự tạo mã"
+                      autocomplete="off">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  Tên hàng hóa
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text"
+                      name="name"
+                      id="productName"
+                      class="form-control"
+                      value="{{ product.name if product else '' }}"
+                      required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Mã vạch</label>
+              <input type="text" name="barcode" class="form-control"
+                     value="{{ product.barcode if product else '' }}" placeholder="EAN/QR...">
+            </div>
+            <!-- Unit & Category from DB tables -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Đơn vị tính <span class="text-danger">*</span></label>
+              <select name="unit_id" class="form-select select2" id="unitSel">
+                <option value="">-- Chọn ĐVT --</option>
+                {% for u in units %}
+                <option value="{{ u.id }}" data-name="{{ u.name }}"
+                  {{ 'selected' if product and product.unit_id==u.id }}>
+                  {{ u.name }}
+                </option>
+                {% endfor %}
+              </select>
+              <input type="hidden" name="unit_text" id="unitText"
+                     value="{{ product.unit if product else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Nhóm hàng</label>
+              <select name="category_id" class="form-select select2" id="catSel">
+                <option value="">-- Chọn nhóm --</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" data-name="{{ c.name }}"
+                  {{ 'selected' if product and product.category_id==c.id }}>
+                  {{ c.name }}
+                </option>
+                {% endfor %}
+              </select>
+              <input type="hidden" name="category_text" id="catText"
+                     value="{{ product.category if product else '' }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-semibold">Thuế VAT (%)</label>
+              <select name="vat_rate" class="form-select">
+                {% for rate in [0,5,8,10] %}
+                <option value="{{ rate }}"
+                  {{ 'selected' if product and product.vat_rate|float==rate
+                     else ('selected' if not product and rate==10 else '') }}>
+                  {{ rate }}%
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Giá mua</label>
+              <div class="input-group">
+                <input type="number" name="purchase_price" class="form-control text-end" step="1"
+                       value="{{ product.purchase_price|float|int if product else 0 }}" min="0">
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Giá bán</label>
+              <div class="input-group">
+                <input type="number" name="sale_price" class="form-control text-end" step="1"
+                       value="{{ product.sale_price|float|int if product else 0 }}" min="0">
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+
+            <!-- E-commerce (Retail) -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Giá bán lẻ</label>
+              <div class="input-group">
+                <input type="number"
+                  name="retail_price"
+                  class="form-control text-end"
+                  step="1"
+                  value="{{ product.retail_price|float|int if product and product.retail_price else (product.sale_price|float|int if product else 0) }}">
+                <span class="input-group-text">VND</span>
+              </div>
+              <div class="form-text"></div>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Liên hệ</label>
+              <div class="form-check form-switch mt-2">
+                 <input class="form-check-input" type="checkbox" name="contact_for_price" id="contactForPrice"
+ {{ 'checked' if product and product.contact_for_price else '' }}
+                <label class="form-check-label" for="contactForPrice">Hiện “Liên hệ”</label>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Tồn tối thiểu</label>
+              <input type="number" name="min_stock" class="form-control" step="0.001"
+                     value="{{ product.min_stock|float if product else 0 }}" min="0">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Tồn tối đa</label>
+              <input type="number" name="max_stock" class="form-control" step="0.001"
+                     value="{{ product.max_stock|float if product else 0 }}" min="0">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Mô tả</label>
+              <textarea name="description" class="form-control" rows="2">{{ product.description if product else '' }}</textarea>
+            </div>
+            <div class="col-md-6">
+
+              <label class="form-label fw-semibold">
+                  Hình sản phẩm
+              </label>
+
+              <input type="file"name="images"id="imageFile"class="form-control"
+                  accept="image/*"multiple>
+              <small class="text-muted d-block mt-1">
+                  Có thể chọn nhiều ảnh.
+              </small>
+
+              {% if product and product.images %}
+              <div class="row g-2 mt-2">
+                  {% for img in product.gallery %}
+                  <div class="col-auto">
+                      <div class="position-relative">
+                          <img
+                              src="{{ img.image_url }}"
+                              data-zoom="{{ img.image_url }}"
+                              alt=""
+                              class="rounded border me-2 erp-zoomable-img "
+                              style="width:90px;height:90px;
+                                  object-fit:cover;border-radius:10px;
+                                  border:1px solid #ddd;
+                              ">
+                          {% if img.is_main %}
+                          <span
+                              class="badge bg-success position-absolute  top-0 start-0">
+                          </span>
+                          {% endif %}
+
+                          <button
+                              type="button"
+                              class="btn btn-sm btn-danger  position-absolute top-0 end-0 delete-image-btn"
+                              style="z-index: 10;"
+                              data-image-id="{{ img.id }}">
+                              ×
+                          </button>
+
+                      </div>
+
+                  </div>
+
+                  {% endfor %}
+
+              </div>
+
+              {% endif %}
+
+              <div
+                  id="newImagePreview"
+                  class="row g-2 mt-2">
+              </div>
+
+          </div>
+            <div class="col-md-6 d-flex align-items-end gap-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="allow_negative" id="allowNeg"
+                       {{ 'checked' if (not product or product.allow_negative) else '' }}>
+                <label class="form-check-label" for="allowNeg">
+                  <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                  Cho phép xuất âm tồn kho
+                </label>
+              </div>
+              {% if product %}
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
+                       {{ 'checked' if product.is_active else '' }}>
+                <label class="form-check-label" for="isActive">Đang hoạt động</label>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Nhập kho ban đầu (Chỉ khi tạo mới) -->
+          {% if not product %}
+          <hr class="my-4">
+          <h5 class="fw-bold text-primary mb-3"><i class="fas fa-boxes me-2"></i>Nhập kho ban đầu (Tùy chọn)</h5>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Kho nhập</label>
+              <select name="opening_warehouse_id" class="form-select select2">
+                <option value="">-- Chọn kho --</option>
+                {% for w in warehouses %}
+                <option value="{{ w.id }}">{{ w.code }} - {{ w.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Số lượng</label>
+              <input type="number" name="opening_qty" class="form-control text-end" min="0" step="0.001" value="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Giá vốn ban đầu</label>
+              <div class="input-group">
+                <input type="number" name="opening_cost" class="form-control text-end" min="0" step="1" value="0" id="openingCost">
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Quy đổi đơn vị (Inline) -->
+          <hr class="my-4">
+          <h5 class="fw-bold text-primary mb-3"><i class="fas fa-exchange-alt me-2"></i>Quy đổi đơn vị</h5>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered" id="convTable">
+              <thead class="table-light">
+                <tr>
+                  <th>Đơn vị quy đổi (Từ)</th>
+                  <th width="150" class="text-center">Hệ số quy đổi</th>
+                  <th>Đơn vị gốc (Sang)</th>
+                  <th width="60" class="text-center"><button type="button" class="btn btn-sm btn-success" id="addConvBtn"><i class="fas fa-plus"></i></button></th>
+                </tr>
+              </thead>
+              <tbody id="convBody">
+                {% if conversions %}
+                  {% for conv in conversions %}
+                  <tr>
+                    <td>
+                      <select name="conv_unit_id[]" class="form-select form-select-sm" required>
+                        <option value="">-- Chọn --</option>
+                        {% for u in units %}
+                        <option value="{{ u.id }}" {{ 'selected' if conv.from_unit_id == u.id else '' }}>{{ u.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td><input type="number" name="conv_factor[]" class="form-control form-control-sm text-end" step="0.0001" min="0.0001" value="{{ conv.conversion_factor|float }}" required></td>
+                    <td class="align-middle base-unit-display">{{ product.get_unit_name() if product else 'ĐVT gốc' }}</td>
+                    <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-conv"><i class="fas fa-times"></i></button></td>
+                  </tr>
+                  {% endfor %}
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a href="{{ url_for('products.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if product else 'Lưu hàng hóa' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+$(function() {
+  $('.select2').select2({theme:'bootstrap-5', width:'100%'});
+  // Sync text fallback
+  $('#unitSel').on('change', function(){
+    const text = $(this).find('option:selected').data('name') || 'ĐVT gốc';
+    $('#unitText').val(text);
+    $('.base-unit-display').text(text);
+  });
+  $('#catSel').on('change', function(){
+    $('#catText').val($(this).find('option:selected').data('name') || '');
+  });
+  
+  // Sync purchase price to opening cost if empty
+  $('input[name="purchase_price"]').on('input', function() {
+    if (!$('#openingCost').data('user-changed')) {
+      $('#openingCost').val($(this).val());
+    }
+  });
+  $('#openingCost').on('input', function() {
+    $(this).data('user-changed', true);
+  });
+
+$('#imageFile').on('change', function () {
+
+    const preview = document.getElementById('newImagePreview');
+
+    preview.innerHTML = '';
+
+    [...this.files].forEach(file => {
+
+        const reader = new FileReader();
+
+        reader.onload = function(e){
+
+            preview.insertAdjacentHTML(
+                'beforeend',
+                `
+                <div class="col-auto">
+                    <img
+                        src="${e.target.result}"
+                        style="
+                            width:90px;
+                            height:90px;
+                            object-fit:cover;
+                            border-radius:10px;
+                            border:1px solid #ddd;
+                        ">
+                </div>
+                `
+            );
+
+        };
+
+        reader.readAsDataURL(file);
+
+    });
+
+});
+
+  async function compressImageFile(file, maxSize = 1600, quality = 0.82) {
+    if (!file || !file.type.startsWith('image/')) return file;
+    if (file.type === 'image/gif') return file;
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = objectUrl;
+      });
+
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+      if (!blob || blob.size >= file.size) return file;
+      return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      });
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  $('form').on('submit', async function(e) {
+
+    const input = document.getElementById('imageFile');
+
+    if (
+        !input ||
+        !input.files.length ||
+        input.dataset.compressed === '1'
+    ) {
+        return;
+    }
+
+    e.preventDefault();
+
+    const btn = this.querySelector('button[type="submit"]');
+    const oldHtml = btn ? btn.innerHTML : '';
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML =
+            '<i class="fas fa-spinner fa-spin me-1"></i>Đang nén ảnh...';
+    }
+
+    try {
+
+        const dt = new DataTransfer();
+
+        for (const file of input.files) {
+
+            const compressed =
+                await compressImageFile(file);
+
+            dt.items.add(compressed);
+
+        }
+
+        input.files = dt.files;
+
+        input.dataset.compressed = '1';
+
+        this.submit();
+
+    } catch (err) {
+
+        input.dataset.compressed = '1';
+
+        this.submit();
+
+    } finally {
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = oldHtml;
+        }
+
+    }
+
+});
+
+    try {
+      const compressed = await compressImageFile(file);
+      if (compressed !== file && window.DataTransfer) {
+        const dt = new DataTransfer();
+        dt.items.add(compressed);
+        input.files = dt.files;
+      }
+      input.dataset.compressed = '1';
+      this.submit();
+    } catch (err) {
+      input.dataset.compressed = '1';
+      this.submit();
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+      }
+    }
+  });
+
+  // Unit conversion inline logic
+  $('#addConvBtn').on('click', function() {
+    const baseUnitName = $('#unitSel').find('option:selected').data('name') || 'ĐVT gốc';
+    const row = `<tr>
+      <td>
+        <select name="conv_unit_id[]" class="form-select form-select-sm" required>
+          <option value="">-- Chọn --</option>
+          {% for u in units %}
+          <option value="{{ u.id }}">{{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td><input type="number" name="conv_factor[]" class="form-control form-control-sm text-end" step="0.0001" min="0.0001" value="1" required></td>
+      <td class="align-middle base-unit-display">${baseUnitName}</td>
+      <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-conv"><i class="fas fa-times"></i></button></td>
+    </tr>`;
+    $('#convBody').append(row);
+  });
+  
+  $('#convBody').on('click', '.remove-conv', function() {
+    $(this).closest('tr').remove();
+  });
+});
+</script>
+<script src="{{ url_for('static', filename='js/product_code.js') }}"></script>
+<script>
+const productName = document.getElementById('productName');
+const productCode = document.getElementById('productCode');
+
+// edit mode -> không auto overwrite
+const isEditMode = {{ 'true' if product else 'false' }};
+
+if (!isEditMode) {
+  let codeDebounce = null;
+  let latestReq = 0;
+
+  productName.addEventListener('input', async function () {
+
+    // nếu user đã nhập tay -> không overwrite
+    if (productCode.dataset.manual === '1') {
+      return;
+    }
+    if (codeDebounce) clearTimeout(codeDebounce);
+    const currentText = this.value;
+    codeDebounce = setTimeout(async () => {
+      const reqId = ++latestReq;
+      const suggested = await ProductCode.slugFromName(currentText);
+      if (reqId !== latestReq) return;
+      productCode.value = suggested || '';
+    }, 250);
+  });
+
+  productCode.addEventListener('input', function () {
+
+    // user nhập tay
+    if (this.value.trim() !== '') {
+      this.dataset.manual = '1';
+    } else {
+      this.dataset.manual = '0';
+    }
+  });
+}
+$(document).on('click', '.delete-image-btn', function () {
+
+    if (!confirm('Xóa ảnh này?')) {
+        return;
+    }
+
+    const btn = $(this);
+    const imageId = btn.data('image-id');
+
+    fetch(`/products/image/delete/${imageId}`, {
+        method: 'POST'
+    })
+    .then(r => r.json())
+    .then(res => {
+
+        if (res.success) {
+
+            btn.closest('.product-image-item').remove();
+
+        } else {
+
+            alert(res.message || 'Không xóa được ảnh');
+
+        }
+
+    });
+
+});
+</script>
+{% endblock %}

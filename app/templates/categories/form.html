@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if cat else 'Thêm' }} nhóm hàng{% endblock %}
+{% block page_title %}<i class="fas fa-tags me-2"></i>{{ 'Sửa: ' + cat.code if cat else 'Thêm nhóm hàng mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-6">
+  <div class="card">
+    <div class="card-header">Thông tin nhóm hàng hóa</div>
+    <form method="POST">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Mã nhóm <span class="text-danger">*</span></label>
+            <input type="text" name="code" class="form-control text-uppercase"
+                  value="{{ cat.code if cat else '' }}"
+                  placeholder="Để trống tự tạo mã"
+                  {% if cat %}readonly{% endif %}>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Tên nhóm hàng <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control"
+                   value="{{ cat.name if cat else '' }}" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Nhóm cha</label>
+            <select name="parent_id" class="form-select select2">
+              <option value="">-- Nhóm gốc --</option>
+              {% for c in all_cats %}
+              <option value="{{ c.id }}" {{ 'selected' if cat and cat.parent_id==c.id }}>
+                {{ c.code }} - {{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Mô tả</label>
+            <input type="text" name="description" class="form-control"
+                   value="{{ cat.description if cat else '' }}">
+          </div>
+          {% if cat %}
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="is_active"
+                     {{ 'checked' if cat.is_active else '' }}>
+              <label class="form-check-label">Đang hoạt động</label>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-content-between">
+        <a href="{{ url_for('categories.index') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if cat else 'Lưu' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div></div>
+{% endblock %}
+{% block extra_js %}
+<script>$(function(){ $('.select2').select2({theme:'bootstrap-5',width:'100%'}); });</script>
+<script src="{{ url_for('static', filename='js/product_code.js') }}"></script>
+{% endblock %}

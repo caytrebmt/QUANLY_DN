@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa' if customer else 'Thêm' }} khách hàng{% endblock %}
+{% block page_title %}<i class="fas fa-user-plus me-2"></i>{{ 'Sửa: ' + customer.code if customer else 'Thêm khách hàng mới' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <div class="card">
+      <div class="card-header">Thông tin khách hàng</div>
+      <form method="POST">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Mã KH <span class="text-danger">*</span></label>
+              <input type="text" name="code" class="form-control text-uppercase"
+                     value="{{ customer.code if customer else '' }}"
+                     {% if customer %}readonly{% endif %} required placeholder="VD: KH001">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">Tên khách hàng <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ customer.name if customer else '' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Loại khách hàng</label>
+              <select name="customer_type" class="form-select">
+                <option value="retail" {{ 'selected' if customer and customer.customer_type=='retail' else ('selected' if not customer else '') }}>Bán lẻ</option>
+                <option value="wholesale" {{ 'selected' if customer and customer.customer_type=='wholesale' }}>Bán buôn</option>
+                <option value="agent" {{ 'selected' if customer and customer.customer_type=='agent' }}>Đại lý</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Địa chỉ</label>
+              <input type="text" name="address" class="form-control"
+                     value="{{ customer.address if customer else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Điện thoại</label>
+              <input type="text" name="phone" class="form-control"
+                     value="{{ customer.phone if customer else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" name="email" class="form-control"
+                     value="{{ customer.email if customer else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Mã số thuế</label>
+              <input type="text" name="tax_code" class="form-control"
+                     value="{{ customer.tax_code if customer else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Người liên hệ</label>
+              <input type="text" name="contact_person" class="form-control"
+                     value="{{ customer.contact_person if customer else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Số TK ngân hàng</label>
+              <input type="text" name="bank_account" class="form-control"
+                     value="{{ customer.bank_account if customer else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Tên ngân hàng</label>
+              <input type="text" name="bank_name" class="form-control"
+                     value="{{ customer.bank_name if customer else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Thời hạn TT (ngày)</label>
+              <input type="number" name="payment_terms" class="form-control"
+                     value="{{ customer.payment_terms if customer else 30 }}" min="0" max="365">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Hạn mức công nợ</label>
+              <div class="input-group">
+                <input type="number" name="credit_limit" class="form-control"
+                       value="{{ customer.credit_limit|float|int if customer else 0 }}" min="0" step="1000000">
+                <span class="input-group-text">VND</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Chiết khấu (%)</label>
+              <div class="input-group">
+                <input type="number" name="discount_rate" class="form-control"
+                       value="{{ customer.discount_rate|float if customer else 0 }}" min="0" max="100" step="0.5">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Ghi chú</label>
+              <textarea name="note" class="form-control" rows="2">{{ customer.note if customer else '' }}</textarea>
+            </div>
+            {% if customer %}
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
+                       {{ 'checked' if customer.is_active else '' }}>
+                <label class="form-check-label" for="isActive">Đang hoạt động</label>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>{{ 'Cập nhật' if customer else 'Lưu khách hàng' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
